@@ -18,6 +18,8 @@ subdog -d example.com -p
 ```
 
 # Sources 
-- [crt.sh](https://crt.sh)
-- [digiCert](https://ssltools.digicert.com) 
-- [certspotter](https://certspotter.com)
+- [rapiddns](https://rapiddns.io)
+- [threatminer](https://api.threatminer.org) 
+- [riddler](https://riddler.io)
+- [alienvault](https://otx.alienvault.com)
+- [threatcrowd](https://www.threatcrowd.org)
