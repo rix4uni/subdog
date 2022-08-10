@@ -1,3 +1,16 @@
+
+
+
+printf "Installing jq\n\n"
+if [ -f /etc/os-release ]; then apt install jq -y;
+elif [ -f /etc/redhat-release ]; then yum install jq -y;
+elif [ -f /etc/arch-release ]; then sudo pacman -S jq -y;
+fi
+
+
+
+
+
 curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "td" | grep ".$domain" | awk '{print $1}' | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sort -u
 curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]' 2>/dev/null | grep -o "\w.*$domain" | sort -u
 curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | grep -o "\w.*$domain"| awk -F, '{print $6}' | sort -u
