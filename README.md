@@ -10,7 +10,7 @@
 ```
        
 # Description
-subdog uses a number of different sources to create a list of root subdomains (i.e.: corp.example.com)                                         
+subdog collect number of different sources to create a list of root subdomains (i.e.: corp.example.com)                                         
 
 # Install
 ```
