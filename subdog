@@ -21,6 +21,16 @@ banner(){
 \t\t                    coded by ${YELLOW}@rix4uni${RED} in INDIA${RESET}"
 }
 
+showhelp(){
+    banner
+    echo -e "${GREEN}TARGET OPTIONS${RESET}"
+    echo -e "   -d, --domain        Single Target domain (domain.com)"
+	echo -e "   -p, --passive       Passive - Performs only passive steps"
+	echo -e ""
+	echo -e "${green}USAGE EXAMPLES${reset}"
+    echo -e "   ${blue}Passive subdomain scanning:${reset}"
+    echo -e "   $0 -d example.com -p"
+}
 
 if [[ ! -x "$(command -v jq)" ]]; then
 	printf "${bblue}Installing jq\n\n"
