@@ -24,7 +24,7 @@ git clone https://github.com/rix4uni/subdog.git && cd subdog && chmod +x subdog 
 subdog -d example.com
 ```
 
-**By Default output saved ./ you can export file different location using -o**
+**By Default output saved ./subdog_subdomain.txt you can export file different location using -o**
 ```
 subdog -d example.com -o <filename>
 ```
