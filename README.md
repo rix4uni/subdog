@@ -18,8 +18,15 @@ git clone https://github.com/rix4uni/subdog.git && cd subdog && chmod +x subdog 
 ```
 
 # Usage
+
+**Scan a single domain**
 ```
-subdog -d example.com -p
+subdog -d example.com
+```
+
+**Export output**
+```
+subdog -d example.com -o <filename>
 ```
 
 # Sources 
