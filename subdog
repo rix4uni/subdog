@@ -46,21 +46,22 @@ output_path=$4
 touch $output_path 2>/dev/null
 passive_scan(){
 	company_name=${domain%%.*}
-	curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d' | sort -u >> ./subdog_subdomain_old.txt
-	curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]' 2>/dev/null | grep "$company_name" | sort -u >> ./subdog_subdomain_old.txt
-	curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | grep  "$company_name" | awk -F, '{print $6}' | sort -u >> ./subdog_subdomain_old.txt
-	curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq '.passive_dns[].hostname' 2>/dev/null | grep "$company_name" | tr -d '"' | sort -u >> ./subdog_subdomain_old.txt
-	curl -s "https://www.threatcrowd.org/searchApi/v2/domain/report/?domain=$domain" | jq -r '.subdomains' 2>/dev/null | grep "$company_name" | tr -d '", ' | sort -u >> ./subdog_subdomain_old.txt
-
+	curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d' | sort -u
+	curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]' 2>/dev/null | grep "$company_name" | sort -u
+	curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | grep  "$company_name" | awk -F, '{print $6}' | sort -u
+	curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq '.passive_dns[].hostname' 2>/dev/null | grep "$company_name" | tr -d '"' | sort -u
+	curl -s "https://www.threatcrowd.org/searchApi/v2/domain/report/?domain=$domain" | jq -r '.subdomains' 2>/dev/null | grep "$company_name" | tr -d '", ' | sort -u
+	curl --insecure --silent "http://web.archive.org/cdx/search/cdx?url=*.$domain/*&output=text&fl=original&collapse=urlkey" | sed -e 's_https*://__' -e "s/\/.*//" -e 's/:.*//' -e 's/^www\.//' | sed "/@/d" | sed -e 's/\.$//' | sort -u
+	
 	if [[ "$option" == "-o" || "$option" == "--output" ]]; then
-		cat ./subdog_subdomain_old.txt | tr -d ' ' | sort -u > $output_path | rm -rf ./subdog_subdomain_old.txt
+		cat subdog_subdomain_old.txt | tr -d ' ' | sort -u > $output_path | rm -rf subdog_subdomain_old.txt
 		echo -e "${GREEN}$(cat $output_path)${RESET}"
 		echo -e "${YELLOW}[+] Number of domains found: $(cat $output_path | wc -l)${RESET}"
 		echo -e "${YELLOW}[+] Saved output: $output_path${RESET}"
 	else
-		cat ./subdog_subdomain_old.txt | tr -d ' ' | sort -u > ./subdog_subdomain.txt | rm -rf ./subdog_subdomain_old.txt
-		echo -e "${GREEN}$(cat ./subdog_subdomain.txt)${RESET}"
-		echo -e "${YELLOW}[+] Number of domains found: $(cat ./subdog_subdomain.txt | wc -l)${RESET}"
+		cat ./subdog_subdomain_old.txt | tr -d ' ' | sort -u > subdog_subdomain.txt | rm -rf subdog_subdomain_old.txt
+		echo -e "${GREEN}$(cat subdog_subdomain.txt)${RESET}"
+		echo -e "${YELLOW}[+] Number of domains found: $(cat subdog_subdomain.txt | wc -l)${RESET}"
 		echo -e "${YELLOW}[+] Saved output: $PWD/subdog_subdomain.txt${RESET}"
 	fi
 }
