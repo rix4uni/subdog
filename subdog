@@ -52,6 +52,8 @@ passive_scan(){
 	curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq '.passive_dns[].hostname' 2>/dev/null | grep "$company_name" | tr -d '"' | sort -u
 	curl -s "https://www.threatcrowd.org/searchApi/v2/domain/report/?domain=$domain" | jq -r '.subdomains' 2>/dev/null | grep "$company_name" | tr -d '", ' | sort -u
 	curl --insecure --silent "http://web.archive.org/cdx/search/cdx?url=*.$domain/*&output=text&fl=original&collapse=urlkey" | sed -e 's_https*://__' -e "s/\/.*//" -e 's/:.*//' -e 's/^www\.//' | sed "/@/d" | sed -e 's/\.$//' | sort -u
+	curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d"," | sort -u
+	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sort -u
 	
 	if [[ "$option" == "-o" || "$option" == "--output" ]]; then
 		cat subdog_subdomain_old.txt | tr -d ' ' | sort -u > $output_path | rm -rf subdog_subdomain_old.txt
