@@ -60,9 +60,6 @@ while [ -n "$1" ]; do
     case $1 in
         -d|--domain)
             domain=$2
-            shift ;;
-			
-        -p|--passive)
             passive_scan
             shift ;;
 
@@ -70,7 +67,7 @@ while [ -n "$1" ]; do
             echo "Version: $VERSION"
             exit 0 ;;
 
-        -h|--help|*)
+        -h|--help)
             showhelp
             exit 1 ;;
 
