@@ -45,8 +45,7 @@ passive_scan(){
 	curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d' | sort -u
 	curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]' | sort -u
 	curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d' | sort -u
-	curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq '.passive_dns[].hostname' 2>/dev/null | grep "$company_name" | tr -d '"' | sort -u
-	curl -s "https://www.threatcrowd.org/searchApi/v2/domain/report/?domain=$domain" | jq -r '.subdomains' 2>/dev/null | grep "$company_name" | tr -d '", ' | sort -u
+	curl -s "https://otx.alienvault.com/api/v1/indicators/domain/aa.com/passive_dns" | jq -r '.passive_dns[].hostname' | sort -u
 	curl --insecure --silent "http://web.archive.org/cdx/search/cdx?url=*.$domain/*&output=text&fl=original&collapse=urlkey" | sed -e 's_https*://__' -e "s/\/.*//" -e 's/:.*//' -e 's/^www\.//' | sed "/@/d" | sed -e 's/\.$//' | sort -u
 	curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d"," | sort -u
 	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sort -u
