@@ -54,6 +54,7 @@ passive_scan(){
 	curl --insecure --silent "http://web.archive.org/cdx/search/cdx?url=*.$domain/*&output=text&fl=original&collapse=urlkey" | sed -e 's_https*://__' -e "s/\/.*//" -e 's/:.*//' -e 's/^www\.//' | sed "/@/d" | sed -e 's/\.$//' | sort -u
 	curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d"," | sort -u
 	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sort -u
+	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].common_name' | sort -u
 	
 	if [[ "$option" == "-o" || "$option" == "--output" ]]; then
 		cat subdog_subdomain_old.txt | tr -d ' ' | sort -u > $output_path | rm -rf subdog_subdomain_old.txt
