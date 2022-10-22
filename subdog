@@ -24,12 +24,12 @@ showhelp(){
     banner
     echo -e "${GREEN}TARGET OPTIONS${RESET}"
     echo -e "   -d, --domain			Single Target domain (domain.com)"
-	echo -e "   -o, --output/path		Define output file"
-	echo -e ""
-	echo -e "${GREEN}USAGE EXAMPLES${RESET}"
+    echo -e "   -o, --output/path		Define output file"
+    echo -e ""
+    echo -e "${GREEN}USAGE EXAMPLES${RESET}"
     echo -e "   ${BYELLOW}$0 -d example.com${RESET}"
     echo -e "   ${BYELLOW}$0 -d example.com -o domain.txt${RESET}"
-	echo -e ""
+    echo -e ""
 }
 
 
