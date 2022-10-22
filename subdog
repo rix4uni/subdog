@@ -56,6 +56,8 @@ passive_scan(){
 	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].name_value' | sort -u
 	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].common_name' | sort -u
 	curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.'[] | sort -u
+	curl -s "https://urlscan.io/api/v1/search/?q=domain:aa.com" | jq -r '.results[].page.domain' | sort -u
+
 	
 	if [[ "$option" == "-o" || "$option" == "--output" ]]; then
 		cat subdog_subdomain_old.txt | tr -d ' ' | sort -u > $output_path | rm -rf subdog_subdomain_old.txt
