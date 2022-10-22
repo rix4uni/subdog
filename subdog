@@ -60,7 +60,7 @@ while [ -n "$1" ]; do
         -d|--domain)
             domain=$2
             passive_scan
-            shift ;;
+            exit 0 ;;
 
         -v|--version)
             echo "Version: $VERSION"
