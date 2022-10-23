@@ -42,6 +42,7 @@ fi
 
 passive_scan(){
 	company_name=${domain%%.*}
+	xargs -a live.txt -P 100 -I % bash -c "curl -s 'https://urlscan.io/api/v1/search/?q=domain:%'" | jq -r '.results[].page.domain' | sort -u
 	curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d' | sort -u
 	curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]' | sort -u
 	curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d' | sort -u
