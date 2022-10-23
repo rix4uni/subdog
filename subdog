@@ -9,7 +9,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 RED='\033[0;31m'
 RESET='\033[0m'
-
+VERSION="SubDog v1.0"
 
 banner(){
     echo -e "${GREEN}
@@ -17,7 +17,7 @@ banner(){
 \t\t/ __)(  )(  )(  _ \(  _ \(  _  )/ __)
 \t\t\__ \ )(__)(  ) _ < )(_) ))(_)(( (_-.
 \t\t(___/(______)(____/(____/(_____)\___/
-\t\t                    coded by ${YELLOW}@rix4uni${RED} in INDIA${RESET}"
+\t\t${VERSION}                    coded by ${YELLOW}@rix4uni${RED} in INDIA${RESET}"
 }
 
 showhelp(){
