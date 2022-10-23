@@ -24,14 +24,13 @@ git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x subdog 
 subdog -d example.com
 ```
 
-**By Default output saved `./subdog_subdomain.txt` you can export output different location using `-o`**
-```
-subdog -d example.com -o <filename>
-```
-
 # Sources 
 - [rapiddns](https://rapiddns.io)
 - [threatminer](https://api.threatminer.org) 
 - [riddler](https://riddler.io)
 - [alienvault](https://otx.alienvault.com)
-- [threatcrowd](https://www.threatcrowd.org)
+- [WayBackMachine](http://web.archive.org)
+- [hackertarget](https://api.hackertarget.com)
+- [crt.sh](https://crt.sh)
+- [jldc.me](https://jldc.me)
+- [urlscan](https://urlscan.io)
