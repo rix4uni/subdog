@@ -52,6 +52,7 @@ passive_scan(){
     curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[].common_name' | sort -u
     curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]' | sort -u
 	curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[].page.domain' | grep "$company_name" | sort -u
+    curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[].task.domain' | grep "$company_name" | sort -u
 }
 
 
