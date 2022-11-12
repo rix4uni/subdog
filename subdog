@@ -26,7 +26,7 @@ showhelp(){
     echo -e "   -d, --domain			Single Target domain (domain.com)"
     echo -e ""
     echo -e "${GREEN}USAGE EXAMPLES${RESET}"
-    echo -e "   ${BYELLOW}$0 -d example.com${RESET}"
+    echo -e "   ${BYELLOW}subdog -d example.com${RESET}"
     echo -e ""
 }
 
@@ -62,7 +62,7 @@ while [ -n "$1" ]; do
             exit 0 ;;
 
         -v|--version)
-            echo "Version: $VERSION"
+            echo "$VERSION"
             exit 0 ;;
 
         -h|--help)
