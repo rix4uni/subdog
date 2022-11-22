@@ -27,7 +27,7 @@ source ~/.bashrc
 
 **Scan a single domain**
 ```
-subdog -d example.com
+subdog -d example.com | sort -u
 ```
 
 ### Sources 
