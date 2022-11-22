@@ -2,7 +2,7 @@ import requests
 import sys
 from bs4 import BeautifulSoup
 
-file1 = open('footlocker.txt', 'r')
+file1 = open('output.txt', 'r')
 Lines = file1.readlines()
 
 site_url = "https://subdomainfinder.c99.nl/"
