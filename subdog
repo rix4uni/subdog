@@ -51,7 +51,7 @@ passive_scan(){
 	#curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[] | {name_value:.name_value, common_name:.common_name}[]' | grep -i "$company_name" | sort -u
 	#curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]' | sort -u
 	#curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name" | sort -u
-	#curl -s "https://subdomainfinder.c99.nl/search.php?domain=$domain" | grep "$domain" | grep "<a" | sed 's/class.*//' | sed 's/^.*scans/scans/' | tr -d '"' | tee output.txt &> /dev/null
+	curl -s "https://subdomainfinder.c99.nl/search.php?domain=$domain" | grep "$domain" | grep "<a" | sed 's/class.*//' | sed 's/^.*scans/scans/' | tr -d '"' | tee output.txt &> /dev/null
 	python3 c99.py $domain | sort -u
 }
 
