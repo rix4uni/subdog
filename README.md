@@ -14,7 +14,13 @@ subdog collect number of different sources to create a list of root subdomains (
 
 # Install
 ```
-git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x subdog && mv subdog /usr/bin/
+git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x subdog
+```
+
+# Create shortcut
+```
+echo -e "\nalias subdog='~/tools/SubDog/subdog'" >> ~/.bashrc
+source ~/.bashrc
 ```
 
 # Usage
