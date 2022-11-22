@@ -30,7 +30,7 @@ source ~/.bashrc
 subdog -d example.com
 ```
 
-# Sources 
+### Sources 
 - [rapiddns](https://rapiddns.io)
 - [threatminer](https://api.threatminer.org) 
 - [riddler](https://riddler.io)
