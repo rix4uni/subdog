@@ -12,7 +12,12 @@
 ### Description
 subdog collect number of different sources to create a list of root subdomains (i.e.: corp.example.com)                                         
 
-### Install `important`
+### Installation
+Requirements: `anew`
+```
+go install -v github.com/tomnomnom/anew@latest
+```
+
 ```
 mkdir -p ~/tools && cd ~/tools && git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x subdog
 ```
