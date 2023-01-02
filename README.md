@@ -20,7 +20,7 @@ go install github.com/tomnomnom/unfurl@latest
 ```
 
 ```
-mkdir -p ~/tools && cd ~/tools && git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x subdog
+mkdir -p ~/tools && cd ~/tools && git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x subdog && pip3 install -r requirements.txt
 ```
 
 ### Create shortcut
