@@ -13,7 +13,7 @@
 subdog collect number of different sources to create a list of root subdomains (i.e.: corp.example.com)                                         
 
 ### Installation
-Requirements: `anew`
+Requirements:
 ```
 go install -v github.com/tomnomnom/anew@latest
 go install github.com/tomnomnom/unfurl@latest
