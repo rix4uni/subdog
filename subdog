@@ -50,7 +50,7 @@ passive_scan(){
 	# curl -s "https://crt.sh/?q=%25.$copyright&output=json" | jq -r '.[].common_name' | anew
 	curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]' | anew
 	curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name" | anew
-	python3 ~/tool/SubDog/c99.py -d $domain -t 100 | anew
+	python3 ~/tools/SubDog/c99.py -d $domain -t 100 | anew
 }
 
 while [ -n "$1" ]; do
