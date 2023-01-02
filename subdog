@@ -32,25 +32,27 @@ showhelp(){
 if [[ ! -x "$(command -v jq)" ]]; then
 	printf "${BBLUE}Installing jq\n\n"
 	if [ -f /etc/os-release ]; then apt install jq -y &>/dev/null;
-	elif [ -f /etc/redhat-release ]; then yum install jq -y &>/dev/null;
-	elif [ -f /etc/arch-release ]; then sudo pacman -S jq -y &>/dev/null;
 	fi
 fi
 
-passive_scan(){
+main(){
 	company_name=${domain%%.*}
 	copyright=$3
-	curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d' | anew
-	curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]' | anew
-	curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d' | anew
-	curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$company_name" | anew
-	curl --insecure --silent "http://web.archive.org/cdx/search/cdx?url=*.$domain/*&output=text&fl=original&collapse=urlkey" | unfurl -u domains | anew
-	curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d"," | anew
-	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[] | {name_value:.name_value, common_name:.common_name}[]' | grep -i "$company_name" | anew
-	# curl -s "https://crt.sh/?q=%25.$copyright&output=json" | jq -r '.[].common_name' | anew
-	curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]' | anew
-	curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name" | anew
-	python3 ~/tools/SubDog/c99.py -d $domain -t 100 | anew
+	curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
+	curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
+	curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
+	curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$company_name"
+	curl --insecure --silent "http://web.archive.org/cdx/search/cdx?url=*.$domain/*&output=text&fl=original&collapse=urlkey" | unfurl -u domains
+	curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
+	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[] | {name_value:.name_value, common_name:.common_name}[]' | grep -i "$company_name"
+	# curl -s "https://crt.sh/?q=%25.$copyright&output=json" | jq -r '.[].common_name'
+	curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
+	curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
+	python3 ~/tools/SubDog/c99.py -d $domain -t 100
+}
+
+passive_scan(){
+	main | egrep -v "@" |egrep -v ")"| egrep -vw "inc." |egrep -v "]"| tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}'| anew
 }
 
 while [ -n "$1" ]; do
