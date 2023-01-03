@@ -15,7 +15,13 @@ subdog collect number of different sources to create a list of root subdomains (
 ### Installation
 
 ```
-mkdir -p ~/tools && cd ~/tools && git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x subdog && pip3 install -r requirements.txt
+mkdir -p ~/tools
+cd ~/tools
+git clone https://github.com/rix4uni/SubDog.git
+cd SubDog
+chmod +x install.sh subdog
+pip3 install -r requirements.txt
+./install.sh
 ```
 
 ### Usage
