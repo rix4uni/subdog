@@ -40,6 +40,7 @@ main(){
 	curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
 	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[] | {name_value:.name_value, common_name:.common_name}[]' | grep -i "$company_name"
 	# curl -s "https://crt.sh/?q=%25.$copyright&output=json" | jq -r '.[].common_name'
+	curl -s "https://api.certspotter.com/v1/issuances?domain=$domain&include_subdomains=true&expand=dns_names&expand=issuer&expand=revocation&expand=cert" | jq -r '.[].dns_names[]' | grep -i "$company_name"
 	curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
 	curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
 	python3 ~/tools/SubDog/c99.py -d $domain -t 100
