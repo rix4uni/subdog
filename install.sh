@@ -18,16 +18,17 @@ elif [[ "$go_latest_version" != "$go_system_version" ]]; then
         echo 'export GOROOT=/usr/local/go' >> ~/.zshrc
         echo 'export GOPATH=$HOME/go' >> ~/.zshrc
         echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> ~/.zshrc
-        source ~/.zshrc
+        eval source ~/.zshrc
     elif [[ -f ~/.bashrc ]]; then
         echo -e "\n#Golang Variable" >> ~/.bashrc
         echo 'export GOROOT=/usr/local/go' >> ~/.bashrc
         echo 'export GOPATH=$HOME/go' >> ~/.bashrc
         echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> ~/.bashrc
-        source ~/.bashrc
+        eval source ~/.bashrc
     fi
 fi
 
+# install some tools
 if [[ ! -x "$(command -v jq)" ]]; then
 	printf "${BBLUE}Installing jq\n"
 	apt install jq -y &>/dev/null;
@@ -38,3 +39,7 @@ elif [[ ! -x "$(command -v unfurl)" ]]; then
 	printf "${BBLUE}Installing unfurl\n"
 	go install github.com/tomnomnom/unfurl@latest &>/dev/null;
 fi
+
+# Create shortcut
+echo -e "\nalias subdog='~/tools/SubDog/subdog'" >> ~/.bashrc
+eval source ~/.bashrc
