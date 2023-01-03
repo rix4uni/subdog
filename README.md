@@ -13,20 +13,9 @@
 subdog collect number of different sources to create a list of root subdomains (i.e.: corp.example.com)                                         
 
 ### Installation
-Requirements:
-```
-go install -v github.com/tomnomnom/anew@latest
-go install github.com/tomnomnom/unfurl@latest
-```
 
 ```
 mkdir -p ~/tools && cd ~/tools && git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x subdog && pip3 install -r requirements.txt
-```
-
-### Create shortcut
-```
-echo -e "\nalias subdog='~/tools/SubDog/subdog'" >> ~/.bashrc
-source ~/.bashrc
 ```
 
 ### Usage
