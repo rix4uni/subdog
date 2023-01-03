@@ -29,12 +29,6 @@ showhelp(){
     echo -e ""
 }
 
-if [[ ! -x "$(command -v jq)" ]]; then
-	printf "${BBLUE}Installing jq\n\n"
-	if [ -f /etc/os-release ]; then apt install jq -y &>/dev/null;
-	fi
-fi
-
 main(){
 	company_name=${domain%%.*}
 	copyright=$3
