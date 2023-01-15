@@ -47,7 +47,7 @@ main(){
 }
 
 passive_scan(){
-	main | egrep -v "@" |egrep -v ")"| egrep -vw "inc." |egrep -v "]"|egrep -v ">"| tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}'| anew
+	main | egrep -v "@" |egrep -v ")"| egrep -vw "inc." |egrep -v "]"|egrep -v ">"| egrep -v "}"|egrep -v "$"|egrep -v '"'|egrep -v "{"|tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}'| anew
 }
 
 while [ -n "$1" ]; do
