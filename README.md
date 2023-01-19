@@ -26,9 +26,14 @@ pip3 install -r requirements.txt
 
 ### Usage
 
-**Scan a single domain**
+Single URL:
 ```
 subdog -d example.com
+```
+
+Multiple URLs:
+```
+for target in $(cat wildcards.txt);do subdog -d $target;done
 ```
 
 ### Sources 
