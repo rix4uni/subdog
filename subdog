@@ -36,18 +36,16 @@ main(){
 	curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
 	curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
 	curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$company_name"
-	curl --insecure --silent "http://web.archive.org/cdx/search/cdx?url=*.$domain/*&output=text&fl=original&collapse=urlkey" | unfurl -u domains
+    echo "$target" | go run archvie.go | unfurl -u domains
 	curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
-	curl -s "https://crt.sh/?q=%25.$domain&output=json" | jq -r '.[] | {name_value:.name_value, common_name:.common_name}[]' | grep -i "$company_name"
-	# curl -s "https://crt.sh/?q=%25.$copyright&output=json" | jq -r '.[].common_name'
-	#curl -s "https://api.certspotter.com/v1/issuances?domain=$domain&include_subdomains=true&expand=dns_names&expand=issuer&expand=revocation&expand=cert" | jq -r '.[].dns_names[]' | grep -i "$company_name"
+    echo "$target"| go run crtsh.go | grep -i "$company_name" | unfurl -u domains
 	curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
 	curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
-	python3 ~/tools/SubDog/c99.py -d $domain -t 100
+    echo "$domain" | python3 c99.py
 }
 
 passive_scan(){
-	main | egrep -v "@" |egrep -v ")"| egrep -vw "inc." |egrep -v "]"|egrep -v ">"| egrep -v "}"|egrep -v "$"|egrep -v '"'|egrep -v "{"|tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}'| anew
+	main |tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}'|unfurl -u domains| anew
 }
 
 while [ -n "$1" ]; do
