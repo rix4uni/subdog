@@ -41,11 +41,11 @@ main(){
     echo "$target"| go run crtsh.go | grep -i "$company_name" | unfurl -u domains
 	curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
 	curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
-    # echo "$domain" | python3 c99.py
+    echo "$domain" | python3 c99.py
 }
 
 passive_scan(){
-	main |tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}'|unfurl -u domains| anew
+	main |tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}'|unfurl -u domains
 }
 
 while [ -n "$1" ]; do
