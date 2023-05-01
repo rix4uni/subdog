@@ -8,7 +8,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 RED='\033[0;31m'
 RESET='\033[0m'
-VERSION="SubDog v1.0"
+VERSION="SubDog v1.1"
 
 banner(){
     echo -e "${GREEN}
@@ -22,46 +22,51 @@ banner(){
 showhelp(){
     banner
     echo -e "${GREEN}TARGET OPTIONS${RESET}"
-    echo -e "   -d, --domain			Single Target domain (domain.com)"
+    echo -e "   -d, --domain            Single Target domain (domain.com)"
+    echo -e "   -l, --list              Multiple Target domain (wildcards.txt)"
     echo -e ""
     echo -e "${GREEN}USAGE EXAMPLES${RESET}"
     echo -e "   ${BYELLOW}subdog -d example.com${RESET}"
+    echo -e "   ${BYELLOW}subdog -l wildcards.txt${RESET}"
     echo -e ""
 }
 
 main(){
-	company_name=${domain%%.*}
-	copyright=$3
-	curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
-	curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
-	curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
-	curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$company_name"
-    echo "$target" | go run archvie.go | unfurl -u domains
-	curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
-    echo "$target"| go run crtsh.go | grep -i "$company_name" | unfurl -u domains
-	curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
-	curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
+    company_name=${domain%%.*}
+    copyright=$3
+    curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
+    curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
+    curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
+    curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$company_name"
+    echo "$domain" | go run archvie.go | unfurl -u domains
+    curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
+    echo "$domain"| go run crtsh.go | grep -i "$company_name" | unfurl -u domains
+    curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
+    curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
     echo "$domain" | python3 c99.py
-}
-
-passive_scan(){
-	main |tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}'|unfurl -u domains
 }
 
 while [ -n "$1" ]; do
     case $1 in
         -d|--domain)
             domain=$2
-            passive_scan
+            main | tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}' | grep -Eo '[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}'
             exit 0 ;;
-
+            
+        -l|--list)
+            filename=$2
+            while read -r line; do
+                domain=$line
+                main | tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}' | grep -Eo '[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}'
+            done < "$filename"
+            exit 0 ;;
+            
         -v|--version)
             echo "$VERSION"
             exit 0 ;;
-
+            
         -h|--help)
             showhelp
             exit 1 ;;
-
     esac
 done
