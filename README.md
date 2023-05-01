@@ -1,18 +1,7 @@
-```
-
-███████╗██╗   ██╗██████╗ ██████╗  ██████╗  ██████╗ 
-██╔════╝██║   ██║██╔══██╗██╔══██╗██╔═══██╗██╔════╝ 
-███████╗██║   ██║██████╔╝██║  ██║██║   ██║██║  ███╗
-╚════██║██║   ██║██╔══██╗██║  ██║██║   ██║██║   ██║
-███████║╚██████╔╝██████╔╝██████╔╝╚██████╔╝╚██████╔╝
-╚══════╝ ╚═════╝ ╚═════╝ ╚═════╝  ╚═════╝  ╚═════╝  
-
-```
-       
-### Description
+# Description
 subdog collect number of different sources to create a list of root subdomains (i.e.: corp.example.com)                                         
 
-### Installation
+# Installation
 
 ```
 mkdir -p ~/tools
@@ -24,7 +13,7 @@ pip3 install -r requirements.txt
 ./install.sh
 ```
 
-### Usage
+# Example Usages
 
 Single URL:
 ```
@@ -33,7 +22,23 @@ subdog -d example.com
 
 Multiple URLs:
 ```
-for target in $(cat wildcards.txt);do subdog -d $target;done
+subdog -l wildcards.txt
+```
+
+# Usage
+```
+                 ___  __  __  ____  ____  _____  ___
+                / __)(  )(  )(  _ \(  _ \(  _  )/ __)
+                \__ \ )(__)(  ) _ < )(_) ))(_)(( (_-.
+                (___/(______)(____/(____/(_____)\___/
+                SubDog v1.1                    coded by @rix4uni in INDIA
+TARGET OPTIONS
+   -d, --domain            Single Target domain (domain.com)
+   -l, --list              Multiple Target domain (wildcards.txt)
+
+USAGE EXAMPLES
+   subdog -d example.com
+   subdog -l wildcards.txt
 ```
 
 ### Sources 
