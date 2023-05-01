@@ -9,7 +9,6 @@ cd ~/tools
 git clone https://github.com/rix4uni/SubDog.git
 cd SubDog
 chmod +x install.sh subdog
-pip3 install -r requirements.txt
 ./install.sh
 ```
 
