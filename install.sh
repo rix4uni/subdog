@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+eval "pip3 install -r requirements.txt"
+
 echo -e "Checking Golang latest version"
 go_latest_version=$(curl -L -s https://golang.org/VERSION?m=text)
 go_system_version=$(go version | awk {'print $3'})
