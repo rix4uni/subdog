@@ -15,5 +15,5 @@ elif [[ ! -x "$(command -v unfurl)" ]]; then
 fi
 
 # Create shortcut
-echo -e "\nalias subdog='~/tools/SubDog/subdog'" >> ~/.bashrc
+if ! grep -qxF "alias subdog='~/tools/SubDog/subdog'" ~/.bashrc ; then echo -e "\nalias subdog='~/tools/SubDog/subdog'" >> ~/.bashrc ; fi
 eval source ~/.bashrc
