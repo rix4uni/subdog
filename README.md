@@ -1,9 +1,10 @@
 # Description
 subdog collect number of different sources to create a list of root subdomains (i.e.: corp.example.com)
 
-# Installation
+# Prerequisite
+> **Note**: before installing SubDog, make sure to install <a href="https://go.dev/dl/">`Go Language`</a>
 
-Requirements: <a href="https://go.dev/dl/">`Go Language`</a>
+# Installation
 
 ```
 mkdir -p ~/tools
