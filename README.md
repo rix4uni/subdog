@@ -3,6 +3,9 @@ subdog collect number of different sources to create a list of root subdomains (
 
 # Prerequisite
 > **Note**: before installing SubDog, make sure to install <a href="https://go.dev/dl/">`Go Language`</a>
+```
+curl -s "https://gist.githubusercontent.com/rix4uni/c412ca956ea3bfa114bf4b615a9762bc/raw/0ffd0d6c0466e38c703a5f221259e2b258af2955/go.sh" | sudo bash && source ~/.bashrc
+```
 
 # Installation
 
