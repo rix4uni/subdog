@@ -13,6 +13,3 @@ elif [[ ! -x "$(command -v unfurl)" ]]; then
 	printf "${BBLUE}Installing unfurl\n"
 	go install github.com/tomnomnom/unfurl@latest &>/dev/null;
 fi
-
-# Create shortcut
-if ! grep -qxF "alias subdog='~/tools/SubDog/subdog'" ~/.bashrc ; then echo -e "\nalias subdog='~/tools/SubDog/subdog'" >> ~/.bashrc ; fi
