@@ -13,3 +13,5 @@ elif [[ ! -x "$(command -v unfurl)" ]]; then
 	printf "${BBLUE}Installing unfurl\n"
 	go install github.com/tomnomnom/unfurl@latest &>/dev/null;
 fi
+
+cp -r ../SubDog/ /usr/bin/
