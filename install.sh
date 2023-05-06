@@ -16,4 +16,3 @@ fi
 
 # Create shortcut
 if ! grep -qxF "alias subdog='~/tools/SubDog/subdog'" ~/.bashrc ; then echo -e "\nalias subdog='~/tools/SubDog/subdog'" >> ~/.bashrc ; fi
-eval source ~/.bashrc
