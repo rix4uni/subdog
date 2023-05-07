@@ -34,16 +34,18 @@ showhelp(){
 main(){
     company_name=${domain%%.*}
     copyright=$3
-    # curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
-    # curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
-    # curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
-    # curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$company_name"
+    curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
+    curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
+    curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
+    curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$company_name"
     echo "$domain" | go run ~/bin/SubDog/archvie.go | unfurl -u domains
-    # curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
-    # echo "$domain"| go run ~/bin/SubDog/crtsh.go | grep -i "$company_name" | unfurl -u domains
-    # curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
-    # curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
-    # echo "$domain" | python3 ~/bin/SubDog/c99.py
+    curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
+    echo "$domain"| go run ~/bin/SubDog/crtsh.go | grep -i "$company_name" | unfurl -u domains
+    curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
+    curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
+    echo "$domain" | python3 ~/bin/SubDog/c99.py
+    curl -s "https://www.virustotal.com/ui/domains/$domain/subdomains?limit=1000&relationships=resolutions" -H 'X-Tool: vt-ui-main' -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36' -H 'Accept-Ianguage: en-US,en;q=0.9,es;q=0.8'   -H 'X-VT-Anti-Abuse-Header: MTY1NjA5Nzk1NjAtWkc5dWRDQmlaU0JsZG1scy0xNjgzNDI2MDY4Ljc2MQ==' | jq -r '.data[].id'
+    curl -s 'https://dnsdumpster.com/' -H 'cookie: csrftoken=vZGRO1YfdzdviMYTYZqLrw0PxsV5mlAnVGFadIqkjIAhiyNgi5w70hIj7uuzdmXx' -H 'referer: https://dnsdumpster.com/' --data-raw "csrfmiddlewaretoken=ktAzNxgx3iKpHNKrwqrG4aqvxhyA2Kj5KazSceIC9r7bHzzOQwx2DV8Z7j74TLGf&targetip=$domain&user=free" | grep '<tr><td class="col-md-4">' | sed 's/<tr><td class="col-md-4">//g;s/<br>//g;s/^[[:space:]]*//;s/[[:space:]]*$//' | grep "$domain"
 }
 
 while [ -n "$1" ]; do
