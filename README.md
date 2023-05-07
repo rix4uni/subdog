@@ -35,6 +35,10 @@ subdog -l wildcards.txt
 TARGET OPTIONS
    -d, --domain            Single Target domain (domain.com)
    -l, --list              Multiple Target domain (wildcards.txt)
+   --org                   Get ASN using orgname (dell)
+   --asn                   Get CIDR Range using ASN (AS59915)
+   --cidr_domain           Get CIDR Range using domain (domain.com)
+   --reverse_domain        Get Reverse Whois Subdomain using domain (domain.com)
 
 USAGE EXAMPLES
    subdog -d example.com
