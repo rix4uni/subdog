@@ -28,6 +28,7 @@ showhelp(){
     echo -e "   --asn                   Get CIDR Range using ASN (AS59915)"
     echo -e "   --cidr_domain           Get CIDR Range using domain (domain.com)"
     echo -e "   --reverse_domain        Get Reverse Whois Subdomain using domain (domain.com)"
+    echo -e "   -h, --help              Help - Show this help"
     echo -e ""
     echo -e "${GREEN}USAGE EXAMPLES${RESET}"
     echo -e "   ${BYELLOW}subdog -d example.com${RESET}"
