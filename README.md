@@ -16,6 +16,7 @@ chmod +x install.sh subdog
 ./install.sh
 cd ..
 mv SubDog ~/bin
+source ~/.bashrc
 ```
 
 # Example Usages
