@@ -34,16 +34,16 @@ showhelp(){
 main(){
     company_name=${domain%%.*}
     copyright=$3
-    curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
-    curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
-    curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
-    curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$company_name"
-    echo "$domain" | go run archvie.go | unfurl -u domains
-    curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
-    echo "$domain"| go run crtsh.go | grep -i "$company_name" | unfurl -u domains
-    curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
-    curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
-    echo "$domain" | python3 c99.py
+    # curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
+    # curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
+    # curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
+    # curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$company_name"
+    echo "$domain" | go run ~/bin/SubDog/archvie.go | unfurl -u domains
+    # curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
+    # echo "$domain"| go run ~/bin/SubDog/crtsh.go | grep -i "$company_name" | unfurl -u domains
+    # curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
+    # curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$company_name"
+    # echo "$domain" | python3 ~/bin/SubDog/c99.py
 }
 
 while [ -n "$1" ]; do
