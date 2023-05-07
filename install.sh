@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-eval "pip3 install -r requirements.txt"
+pip3 install -r requirements.txt
 
 # install some tools
 apt install jq -y
