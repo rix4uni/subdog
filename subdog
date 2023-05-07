@@ -24,6 +24,10 @@ showhelp(){
     echo -e "${GREEN}TARGET OPTIONS${RESET}"
     echo -e "   -d, --domain            Single Target domain (domain.com)"
     echo -e "   -l, --list              Multiple Target domain (wildcards.txt)"
+    echo -e "   --org                   Get ASN using orgname (dell)"
+    echo -e "   --asn                   Get CIDR Range using ASN (AS59915)"
+    echo -e "   --cidr_domain           Get CIDR Range using domain (domain.com)"
+    echo -e "   --reverse_domain        Get Reverse Whois Subdomain using domain (domain.com)"
     echo -e ""
     echo -e "${GREEN}USAGE EXAMPLES${RESET}"
     echo -e "   ${BYELLOW}subdog -d example.com${RESET}"
@@ -31,7 +35,7 @@ showhelp(){
     echo -e ""
 }
 
-main(){
+SUBSCAN(){
     company_name=${domain%%.*}
     copyright=$3
     curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
@@ -48,19 +52,61 @@ main(){
     curl -s 'https://dnsdumpster.com/' -H 'cookie: csrftoken=vZGRO1YfdzdviMYTYZqLrw0PxsV5mlAnVGFadIqkjIAhiyNgi5w70hIj7uuzdmXx' -H 'referer: https://dnsdumpster.com/' --data-raw "csrfmiddlewaretoken=ktAzNxgx3iKpHNKrwqrG4aqvxhyA2Kj5KazSceIC9r7bHzzOQwx2DV8Z7j74TLGf&targetip=$domain&user=free" | grep '<tr><td class="col-md-4">' | sed 's/<tr><td class="col-md-4">//g;s/<br>//g;s/^[[:space:]]*//;s/[[:space:]]*$//' | grep "$domain"
 }
 
+
+GETASN(){
+    curl -s "https://bgp.he.net/search?search%5Bsearch%5D=$org&commit=Search" -H 'Cookie: c=BAgiETQzLjIyNS43NC4yNQ%3D%3D--f7da3c891137361bf93247dd39ce4f2505e25aba; _bgp_session=BAh7BjoPc2Vzc2lvbl9pZEkiJTgzN2ExMjQ3ZjM0OWRlM2M4YzAyZDg5NTBhNjY5MjFmBjoGRUY%3D--654b86349cf92beed37370665ade1c7e1582ab54' -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36' | grep '<td><a href="/AS' | sed 's/<td><a href="\/AS\([0-9]*\)">AS\1<\/a><\/td>/AS\1/g; s/\s//g'
+}
+
+
+GETCIDR(){
+    whois -h whois.radb.net -- "-i origin $asn" | grep -Eo "([0-9.]+){4}/[0-9]+" | uniq
+}
+
+
+GETCIDR_DOMAIN(){
+    curl -s "https://ipinfo.io/widget/demo/$cidr_domain?dataset=ranges" -H 'referer: https://ipinfo.io/products/ranges-api' | jq -r '.ranges[]'
+}
+
+
+GET_REVERSE_DOMAIN(){
+    curl -s "$(curl -s "https://www.whoxy.com/$reverse_domain" | grep "View all Related Domain Names" | cut -d'"' -f2 | sed 's|^|https://www.whoxy.com/|')" | grep '<hr><table class="grid first_col_center"><tr><th>Num</th><th' | grep -Eo '[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}' | sort -u
+    whois $reverse_domain | grep "Registrant Email:\|Admin Email:\|Tech Email:" | awk '{print $3}' | sort -u | while read -r email; do curl -s "https://viewdns.info/reversewhois/?q=$email" -H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36' | grep -oP '(?<=<td>)[a-z0-9.-]+(?=</td><td>[0-9-]+</td><td>)';done
+}
+
+
 while [ -n "$1" ]; do
     case $1 in
         -d|--domain)
             domain=$2
-            main | tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}' | grep -Eo '[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}'
+            SUBSCAN | tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}' | grep -Eo '[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}'
             exit 0 ;;
             
         -l|--list)
             filename=$2
             while read -r line; do
                 domain=$line
-                main | tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}' | grep -Eo '[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}'
+                SUBSCAN | tr -d ' \t' | tr ',' '\n' | awk '{print tolower($0)}' | grep -Eo '[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}'
             done < "$filename"
+            exit 0 ;;
+
+        --org)
+            org=$2
+            GETASN
+            exit 0 ;;
+
+        --asn)
+            asn=$2
+            GETCIDR
+            exit 0 ;;
+
+        --cidr_domain)
+            cidr_domain=$2
+            GETCIDR_DOMAIN
+            exit 0 ;;
+
+        --reverse_domain)
+            reverse_domain=$2
+            GET_REVERSE_DOMAIN
             exit 0 ;;
             
         -v|--version)
