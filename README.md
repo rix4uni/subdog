@@ -11,6 +11,8 @@ curl -s "https://gist.githubusercontent.com/rix4uni/c412ca956ea3bfa114bf4b615a97
 
 ```
 git clone https://github.com/rix4uni/SubDog.git
+cd SubDog
+chmod +x install.sh subdog
 ./install.sh
 ```
 
