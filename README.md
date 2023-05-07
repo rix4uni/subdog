@@ -39,6 +39,7 @@ TARGET OPTIONS
    --asn                   Get CIDR Range using ASN (AS59915)
    --cidr_domain           Get CIDR Range using domain (domain.com)
    --reverse_domain        Get Reverse Whois Subdomain using domain (domain.com)
+   -h, --help              Help - Show this help
 
 USAGE EXAMPLES
    subdog -d example.com
