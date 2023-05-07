@@ -10,13 +10,7 @@ curl -s "https://gist.githubusercontent.com/rix4uni/c412ca956ea3bfa114bf4b615a97
 # Installation
 
 ```
-git clone https://github.com/rix4uni/SubDog.git
-cd SubDog
-chmod +x install.sh subdog
-./install.sh
-cd ..
-mv SubDog ~/bin
-source ~/.bashrc
+git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x install.sh subdog && ./install.sh && cd .. && mv SubDog ~/bin && source ~/.bashrc
 ```
 
 # Example Usages
