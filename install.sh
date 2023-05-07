@@ -8,7 +8,5 @@ go install -v github.com/tomnomnom/anew@latest
 go install github.com/tomnomnom/unfurl@latest
 
 # setup
-mkdir ~/bin
-mv SubDog ~/bin
-chmod +x ~/bin/SubDog/*
+mkdir -p ~/bin
 if ! grep -qxF 'export PATH="$HOME/bin/SubDog:$PATH"' ~/.bashrc ; then echo -e '\nexport PATH="$HOME/bin/SubDog:$PATH"' >> ~/.bashrc ; fi

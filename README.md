@@ -14,6 +14,8 @@ git clone https://github.com/rix4uni/SubDog.git
 cd SubDog
 chmod +x install.sh subdog
 ./install.sh
+cd ..
+mv SubDog ~/bin
 ```
 
 # Example Usages
