@@ -52,6 +52,7 @@ SUBSCAN(){
     curl -s "https://www.virustotal.com/ui/domains/$domain/subdomains?limit=1000&relationships=resolutions" -H 'X-Tool: vt-ui-main' -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36' -H 'Accept-Ianguage: en-US,en;q=0.9,es;q=0.8'   -H 'X-VT-Anti-Abuse-Header: MTY1NjA5Nzk1NjAtWkc5dWRDQmlaU0JsZG1scy0xNjgzNDI2MDY4Ljc2MQ==' | jq -r '.data[].id'
     curl -s 'https://dnsdumpster.com/' -H 'cookie: csrftoken=vZGRO1YfdzdviMYTYZqLrw0PxsV5mlAnVGFadIqkjIAhiyNgi5w70hIj7uuzdmXx' -H 'referer: https://dnsdumpster.com/' --data-raw "csrfmiddlewaretoken=ktAzNxgx3iKpHNKrwqrG4aqvxhyA2Kj5KazSceIC9r7bHzzOQwx2DV8Z7j74TLGf&targetip=$domain&user=free" | grep '<tr><td class="col-md-4">' | sed 's/<tr><td class="col-md-4">//g;s/<br>//g;s/^[[:space:]]*//;s/[[:space:]]*$//' | grep "$domain"
     curl -s "https://api.certspotter.com/v1/issuances?domain=$domain&include_subdomains=true&expand=dns_names" | jq -r '.[].dns_names[]'
+    curl -s 'https://seckrd.com/subdomain-finder' --data-raw "domain=$domain&submit=" | grep "<li><a href=" | grep -oP "(?<=\>).*?(?=\<)"
 }
 
 
