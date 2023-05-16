@@ -53,6 +53,7 @@ SUBSCAN(){
     curl -s 'https://dnsdumpster.com/' -H 'cookie: csrftoken=vZGRO1YfdzdviMYTYZqLrw0PxsV5mlAnVGFadIqkjIAhiyNgi5w70hIj7uuzdmXx' -H 'referer: https://dnsdumpster.com/' --data-raw "csrfmiddlewaretoken=ktAzNxgx3iKpHNKrwqrG4aqvxhyA2Kj5KazSceIC9r7bHzzOQwx2DV8Z7j74TLGf&targetip=$domain&user=free" | grep '<tr><td class="col-md-4">' | sed 's/<tr><td class="col-md-4">//g;s/<br>//g;s/^[[:space:]]*//;s/[[:space:]]*$//' | grep "$domain"
     curl -s "https://api.certspotter.com/v1/issuances?domain=$domain&include_subdomains=true&expand=dns_names" | jq -r '.[].dns_names[]'
     curl -s 'https://seckrd.com/subdomain-finder' --data-raw "domain=$domain&submit=" | grep "<li><a href=" | grep -oP "(?<=\>).*?(?=\<)"
+    curl -s "http://api.subdomain.center/?domain=$domain" | jq -r '.[]' | egrep -v "Rate limit exceeded: 3 per 1 minute"
 }
 
 
