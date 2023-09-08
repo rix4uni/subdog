@@ -39,6 +39,7 @@ showhelp(){
 SUBSCAN(){
     company_name=${domain%%.*}
     copyright=$3
+    echo "$domain" | go run chaos/chaos.go
     curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$company_name" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
     curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
     curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
@@ -58,7 +59,7 @@ SUBSCAN(){
 
 
 GETASN(){
-    curl -s "https://bgp.he.net/search?search%5Bsearch%5D=$org&commit=Search" -H 'Cookie: c=BAgiETQzLjIyNS43NC4yNQ%3D%3D--f7da3c891137361bf93247dd39ce4f2505e25aba; _bgp_session=BAh7BjoPc2Vzc2lvbl9pZEkiJTgzN2ExMjQ3ZjM0OWRlM2M4YzAyZDg5NTBhNjY5MjFmBjoGRUY%3D--654b86349cf92beed37370665ade1c7e1582ab54' -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36' | grep '<td><a href="/AS' | sed 's/<td><a href="\/AS\([0-9]*\)">AS\1<\/a><\/td>/AS\1/g; s/\s//g'
+    curl -s "https://bgp.he.net/search?search%5Bsearch%5D=$org&commit=Search" -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36' | grep -oP '(?<=\>)(AS\d+)(?=</a>)'
 }
 
 
