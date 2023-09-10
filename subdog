@@ -38,20 +38,20 @@ showhelp(){
 
 SUBSCAN(){
     echo "$domain" | go run ~/bin/SubDog/chaos/chaos.go
-    curl -s "https://api.subdomain.center/?domain=$domain" | jq -r '.[]' | egrep -v "Rate limit exceeded: 3 per 1 minute"
-    curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]'
+    curl -s "https://api.subdomain.center/?domain=$domain" | jq -r '.[]' 2>/dev/null
+    curl -s "https://jldc.me/anubis/subdomains/$domain" | jq -r '.[]' 2>/dev/null
     curl -s "https://rapiddns.io/subdomain/$domain?full=1#result" | grep "$domain" | sed 's/<\/\?[^>]\+>//g' | sed '/<a$/d' | sed '1,3d' | sed '/\.$/d'
     echo "$domain"| go run ~/bin/SubDog/crtsh.go | grep -i "$domain" | unfurl -u domains
     curl -s 'https://seckrd.com/subdomain-finder' --data-raw "domain=$domain&submit=" | grep "<li><a href=" | grep -oP "(?<=\>).*?(?=\<)"
-    curl -s "https://www.virustotal.com/ui/domains/$domain/subdomains?limit=1000&relationships=resolutions" -H 'X-Tool: vt-ui-main' -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36' -H 'Accept-Ianguage: en-US,en;q=0.9,es;q=0.8'   -H 'X-VT-Anti-Abuse-Header: MTY1NjA5Nzk1NjAtWkc5dWRDQmlaU0JsZG1scy0xNjgzNDI2MDY4Ljc2MQ==' | jq -r '.data[].id'
-    curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' | grep -i "$domain"
+    curl -s "https://www.virustotal.com/ui/domains/$domain/subdomains?limit=1000&relationships=resolutions" -H 'X-Tool: vt-ui-main' -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36' -H 'Accept-Ianguage: en-US,en;q=0.9,es;q=0.8'   -H 'X-VT-Anti-Abuse-Header: MTY1NjA5Nzk1NjAtWkc5dWRDQmlaU0JsZG1scy0xNjgzNDI2MDY4Ljc2MQ==' | jq -r '.data[].id' 2>/dev/null
+    curl -s "https://otx.alienvault.com/api/v1/indicators/domain/$domain/passive_dns" | jq -r '.passive_dns[].hostname' 2>/dev/null | grep -i "$domain"
     echo "$domain" | go run ~/bin/SubDog/archvie.go | grep "$domain" | unfurl -u domains
-    curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' | grep "$domain"
-    curl -s "https://api.certspotter.com/v1/issuances?domain=$domain&include_subdomains=true&expand=dns_names" | jq -r '.[].dns_names[]' | grep "$domain" 
+    curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' 2>/dev/null | grep "$domain"
+    curl -s "https://api.certspotter.com/v1/issuances?domain=$domain&include_subdomains=true&expand=dns_names" | jq -r '.[].dns_names[]' 2>/dev/null | grep "$domain" 
     curl -s 'https://dnsdumpster.com/' -H 'cookie: csrftoken=vZGRO1YfdzdviMYTYZqLrw0PxsV5mlAnVGFadIqkjIAhiyNgi5w70hIj7uuzdmXx' -H 'referer: https://dnsdumpster.com/' --data-raw "csrfmiddlewaretoken=ktAzNxgx3iKpHNKrwqrG4aqvxhyA2Kj5KazSceIC9r7bHzzOQwx2DV8Z7j74TLGf&targetip=$domain&user=free" | grep '<tr><td class="col-md-4">' | sed 's/<tr><td class="col-md-4">//g;s/<br>//g;s/^[[:space:]]*//;s/[[:space:]]*$//' | grep "$domain"
 
     # curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
-    # curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]'
+    # curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]' 2>/dev/null
     # curl -s "https://api.hackertarget.com/hostsearch/?q=$domain" | cut -f1 -d","
     # echo "$domain" | python3 ~/bin/SubDog/c99.py
 }
@@ -68,7 +68,7 @@ GETCIDR(){
 
 
 GETCIDR_DOMAIN(){
-    curl -s "https://ipinfo.io/widget/demo/$cidr_domain?dataset=ranges" -H 'referer: https://ipinfo.io/products/ranges-api' | jq -r '.ranges[]'
+    curl -s "https://ipinfo.io/widget/demo/$cidr_domain?dataset=ranges" -H 'referer: https://ipinfo.io/products/ranges-api' | jq -r '.ranges[]' 2>/dev/null
 }
 
 
