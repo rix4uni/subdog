@@ -49,6 +49,7 @@ SUBSCAN(){
     curl -s "https://urlscan.io/api/v1/search/?q=domain:$domain" | jq -r '.results[] | {page:.page.domain, task:.task.domain}[]' 2>/dev/null | grep "$domain"
     curl -s "https://api.certspotter.com/v1/issuances?domain=$domain&include_subdomains=true&expand=dns_names" | jq -r '.[].dns_names[]' 2>/dev/null | grep "$domain" 
     curl -s 'https://dnsdumpster.com/' -H 'cookie: csrftoken=vZGRO1YfdzdviMYTYZqLrw0PxsV5mlAnVGFadIqkjIAhiyNgi5w70hIj7uuzdmXx' -H 'referer: https://dnsdumpster.com/' --data-raw "csrfmiddlewaretoken=ktAzNxgx3iKpHNKrwqrG4aqvxhyA2Kj5KazSceIC9r7bHzzOQwx2DV8Z7j74TLGf&targetip=$domain&user=free" | grep '<tr><td class="col-md-4">' | sed 's/<tr><td class="col-md-4">//g;s/<br>//g;s/^[[:space:]]*//;s/[[:space:]]*$//' | grep "$domain"
+    curl -s "https://api.webscout.io/lookup/$domain" | jq -r '.domains[].name' 2>/dev/null
 
     # curl -s "https://riddler.io/search/exportcsv?q=pld:$domain" | cut -d "," -f6 | sed '1,2d'
     # curl -s "https://api.threatminer.org/v2/domain.php?q=$domain&rt=5" | jq -r '.results[]' 2>/dev/null
