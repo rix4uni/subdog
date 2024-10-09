@@ -1,7 +1,7 @@
 ## subdog
 
 subdog collects subdomains from number of different sources to create a list of root subdomains (i.e.: corp.example.com)
-Note: subdog tool gives unfiltered data it can be appex domain or subdomains. you have to filter manually for e.g, `grep ".domain.com$"`
+- Note: subdog tool gives unfiltered data it can be appex domain or subdomains. you have to filter manually for e.g, `grep ".domain.com$"`
 
 ## Installation
 ```
