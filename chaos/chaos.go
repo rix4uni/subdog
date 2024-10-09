@@ -1,8 +1,7 @@
-package main
+package chaos
 
 import (
 	"archive/zip"
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -26,7 +25,8 @@ type ChaosData struct {
 	URL  string `json:"url"`
 }
 
-func processDomain(domain string) {
+// Fetch and process domain data from chaos
+func ProcessDomain(domain string) {
 	// Fetch bugbounty list
 	resp, err := http.Get("https://raw.githubusercontent.com/projectdiscovery/public-bugbounty-programs/main/chaos-bugbounty-list.json")
 	if err != nil {
@@ -117,16 +117,5 @@ func processDomain(domain string) {
 				}
 			}
 		}
-	}
-}
-
-func main() {
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		domain := scanner.Text()
-		processDomain(domain)
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Error reading input:", err)
 	}
 }

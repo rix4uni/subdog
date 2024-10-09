@@ -1,59 +1,86 @@
-# Description
-**SubDog collect number of different sources to create a list of root subdomains (i.e.: corp.example.com)**
+## subdog
 
-# Prerequisite
-> **Note**: before installing SubDog, make sure to install <a href="https://go.dev/dl/">`Go Language`</a>
-```
-curl -s "https://gist.githubusercontent.com/rix4uni/c412ca956ea3bfa114bf4b615a9762bc/raw/ae999f308cbd9be03f068762cb037343b51a40ce/go.sh" | bash && source ~/.bashrc
-```
+subdog collects subdomains from number of different sources to create a list of root subdomains (i.e.: corp.example.com)
+Note: subdog tool gives unfiltered data it can be appex domain or subdomains. you have to filter manually for e.g, `grep ".domain.com$"`
 
-# Installation
-
+## Installation
 ```
-git clone https://github.com/rix4uni/SubDog.git && cd SubDog && chmod +x install.sh subdog && ./install.sh && cd .. && mv SubDog ~/bin && source ~/.bashrc
+go install github.com/rix4uni/subdog@latest
 ```
 
-# Example Usages
+## Download prebuilt binaries
+```
+wget https://github.com/rix4uni/subdog/releases/download/v0.0.2/subdog-linux-amd64-0.0.2.tgz
+tar -xvzf subdog-linux-amd64-0.0.2.tgz
+rm -rf subdog-linux-amd64-0.0.2.tgz
+mv subdog ~/go/bin/subdog
+```
+Or download [binary release](https://github.com/rix4uni/subdog/releases) for your platform.
 
-Single URL:
+## Compile from source
 ```
-subdog -d example.com
-```
-
-Multiple URLs:
-```
-subdog -l wildcards.txt
-```
-
-# Usage
-```
-                 ___  __  __  ____  ____  _____  ___
-                / __)(  )(  )(  _ \(  _ \(  _  )/ __)
-                \__ \ )(__)(  ) _ < )(_) ))(_)(( (_-.
-                (___/(______)(____/(____/(_____)\___/
-                SubDog v1.1                    coded by @rix4uni in INDIA
-TARGET OPTIONS
-   -d, --domain            Single Target domain (domain.com)
-   -l, --list              Multiple Target domain (wildcards.txt)
-   --org                   Get ASN using orgname (dell)
-   --asn                   Get CIDR Range using ASN (AS59915)
-   --cidr_domain           Get CIDR Range using domain (domain.com)
-   --reverse_domain        Get Reverse Whois Subdomain using domain (domain.com)
-   -h, --help              Help - Show this help
-
-USAGE EXAMPLES
-   subdog -d example.com
-   subdog -l wildcards.txt
+git clone --depth 1 github.com/rix4uni/subdog.git
+cd subdog; go install
 ```
 
-### Sources 
-- [rapiddns](https://rapiddns.io)
-- [threatminer](https://api.threatminer.org) 
-- [riddler](https://riddler.io)
-- [alienvault](https://otx.alienvault.com)
-- [WayBackMachine](http://web.archive.org)
-- [hackertarget](https://api.hackertarget.com)
-- [crt.sh](https://crt.sh)
-- [jldc.me](https://jldc.me)
-- [urlscan](https://urlscan.io)
+## Usage
+```
+Usage of subdog:
+  -silent
+        silent mode.
+  -tools string
+        Choose tools: subdomaincenter, jldc, virustotal, alienvault, urlscan, certspotter, hackertarget, crtsh, trickest, subdomainfinder, chaos, merklemap, or all (default "all")
+  -verbose
+        enable verbose mode
+  -version
+        Print the version of the tool and exit.
+```
+
+## Examples Usages
+
+### Single Domain:
+1. Run with `subdomaincenter` only:
+```
+echo "dell.com" | subdog -tools subdomaincenter
+```
+
+2. Run with multiple tools comma-seprated `subdomaincenter` and `jldc`:
+```
+echo "dell.com" | subdog -tools subdomaincenter,virustotal
+```
+
+3. Run with all tools, (default):
+```
+echo "dell.com" | subdog -tools all
+```
+
+### Multiple Domains:
+1. Run with `subdomaincenter` only:
+```
+cat wildcards.txt | subdog -tools subdomaincenter
+```
+
+2. Run with multiple tools comma-seprated `subdomaincenter` and `jldc`:
+```
+cat wildcards.txt | subdog -tools subdomaincenter,virustotal
+```
+
+3. Run with all tools, (default):
+```
+cat wildcards.txt | subdog -tools all
+```
+
+## Sources 
 - [subdomainfinder](https://subdomainfinder.c99.nl)
+- [trickest](https://github.com/trickest/inventory)
+- [crt.sh](https://crt.sh)
+- [hackertarget](https://api.hackertarget.com)
+- [dnsdumpster](https://dnsdumpster.com)
+- [certspotter](https://api.certspotter.com)
+- [urlscan](https://urlscan.io)
+- [alienvault](https://otx.alienvault.com)
+- [virustotal](https://www.virustotal.com)
+- [jldc](https://jldc.me)
+- [subdomaincenter](https://api.subdomain.center)
+- [chaos](https://chaos.projectdiscovery.io)
+- [merklemap](https://api.merklemap.com)
