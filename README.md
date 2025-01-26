@@ -1,7 +1,7 @@
 ## subdog
 
 subdog collects subdomains from number of different sources to create a list of root subdomains (i.e.: corp.example.com)
-- Note: subdog tool gives unfiltered data it can be appex domain or subdomains. you have to filter manually for e.g, `grep ".domain.com$"`
+- Note: subdog tool gives unfiltered data it can be appex domain or subdomains. you have to filter manually for e.g, `grep -aE "^(.*\.)?domain\.com$"`
 
 ## Installation
 ```
@@ -10,9 +10,9 @@ go install github.com/rix4uni/subdog@latest
 
 ## Download prebuilt binaries
 ```
-wget https://github.com/rix4uni/subdog/releases/download/v0.0.2/subdog-linux-amd64-0.0.2.tgz
-tar -xvzf subdog-linux-amd64-0.0.2.tgz
-rm -rf subdog-linux-amd64-0.0.2.tgz
+wget https://github.com/rix4uni/subdog/releases/download/v0.0.3/subdog-linux-amd64-0.0.3.tgz
+tar -xvzf subdog-linux-amd64-0.0.3.tgz
+rm -rf subdog-linux-amd64-0.0.3.tgz
 mv subdog ~/go/bin/subdog
 ```
 Or download [binary release](https://github.com/rix4uni/subdog/releases) for your platform.
@@ -29,7 +29,7 @@ Usage of subdog:
   -silent
         silent mode.
   -tools string
-        Choose tools: subdomaincenter, jldc, virustotal, alienvault, urlscan, certspotter, hackertarget, crtsh, trickest, subdomainfinder, chaos, merklemap, or all (default "all")
+        Choose tools: subdomaincenter, jldc, virustotal, alienvault, urlscan, certspotter, hackertarget, crtsh, trickest, subdomainfinder, chaos, merklemap, shodan, reverseipdomain, or all (default "all")
   -verbose
         enable verbose mode
   -version
@@ -84,3 +84,5 @@ cat wildcards.txt | subdog -tools all
 - [subdomaincenter](https://api.subdomain.center)
 - [chaos](https://chaos.projectdiscovery.io)
 - [merklemap](https://api.merklemap.com)
+- [shodan](https://api.shodan.io)
+- [reverseipdomain](https://sub-scan-api.reverseipdomain.com)

@@ -13,7 +13,7 @@ func FetchSubdomains(domain string) ([]string, error) {
 	url := "https://subdomainfinder.c99.nl/"
 
 	// Prepare the POST request
-	payload := fmt.Sprintf("CSRF9843411078797932=a&jn=JS+aan%%2C+T+aangeroepen%%2C+CSRF+aangepast&domain=%s&lol-stop-reverse-engineering-my-source-and-buy-an-api-key=b7daebdf32b85e93bbbf95e54b00e9d474ee0579&scan_subdomains=", domain)
+	payload := fmt.Sprintf("CSRF9843433218797932=pirate107704869&is_admin=false&jn=JS+aan%2C+T+aangeroepen%2C+CSRF+aangepast&domain=%s&lol-stop-reverse-engineering-my-source-and-buy-an-api-key=cf917529992fd6f916e2b4ef8b37c6d97f040eba&scan_subdomains=", domain)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
 	if err != nil {
 		return nil, err

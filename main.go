@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
 	"github.com/rix4uni/subdog/subdomaincenter"
 	"github.com/rix4uni/subdog/jldc"
 	"github.com/rix4uni/subdog/virustotal"
@@ -18,46 +19,27 @@ import (
 	"github.com/rix4uni/subdog/subdomainfinder"
 	"github.com/rix4uni/subdog/chaos"
 	"github.com/rix4uni/subdog/merklemap"
+	"github.com/rix4uni/subdog/shodan"
+	"github.com/rix4uni/subdog/reverseipdomain"
+	"github.com/rix4uni/subdog/banner"
 )
 
-// prints the version message
-const version = "0.0.2"
-
-func printVersion() {
-	fmt.Printf("Current subdog version %s\n", version)
-}
-
-// Prints the Colorful banner
-func printBanner() {
-	banner := `
-                 __         __             
-   _____ __  __ / /_   ____/ /____   ____ _
-  / ___// / / // __ \ / __  // __ \ / __  /
- (__  )/ /_/ // /_/ // /_/ // /_/ // /_/ / 
-/____/ \__,_//_.___/ \__,_/ \____/ \__, /  
-                                  /____/ 
-`
-fmt.Printf("%s\n%50s\n\n", banner, "Current subdog version "+version)
-}
-
 func main() {
-	tools := flag.String("tools", "all", "Choose tools: subdomaincenter, jldc, virustotal, alienvault, urlscan, certspotter, hackertarget, crtsh, trickest, subdomainfinder, chaos, merklemap, or all")
+	tools := flag.String("tools", "all", "Choose tools: subdomaincenter, jldc, virustotal, alienvault, urlscan, certspotter, hackertarget, crtsh, trickest, subdomainfinder, chaos, merklemap, shodan, reverseipdomain, or all")
 	silent := flag.Bool("silent", false, "silent mode.")
-	version := flag.Bool("version", false, "Print the version of the tool and exit.")
+	versionFlag := flag.Bool("version", false, "Print the version of the tool and exit.")
 	verbose := flag.Bool("verbose", false, "enable verbose mode")
 	flag.Parse()
 
-	// Print version and exit if -version flag is provided
-	if *version {
-		printBanner()
-		printVersion()
-		return
-	}
+	if *versionFlag {
+        banner.PrintBanner()
+        banner.PrintVersion()
+        return
+    }
 
-	// Don't Print banner if -silnet flag is provided
-	if !*silent {
-		printBanner()
-	}
+    if !*silent {
+        banner.PrintBanner()
+    }
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -232,12 +214,44 @@ func main() {
 
 		if *tools == "merklemap" || *tools == "all" {
 			if *verbose {
-				fmt.Printf("Fetching from MerkleMap for %s\n", domain)
+				fmt.Printf("Fetching from shodan for %s\n", domain)
 			}
 			subdomains, err := merklemap.FetchDomains(domain)
 			if err != nil {
 				if *verbose {
+					fmt.Printf("Error fetching domains from shodan for %s: %v\n", domain, err)
+				}
+			} else {
+				for _, subdomain := range subdomains {
+					fmt.Println(subdomain)
+				}
+			}
+		}
+
+		if *tools == "shodan" || *tools == "all" {
+			if *verbose {
+				fmt.Printf("Fetching from MerkleMap for %s\n", domain)
+			}
+			subdomains, err := shodan.FetchSubdomains(domain)
+			if err != nil {
+				if *verbose {
 					fmt.Printf("Error fetching domains from MerkleMap for %s: %v\n", domain, err)
+				}
+			} else {
+				for _, subdomain := range subdomains {
+					fmt.Println(subdomain)
+				}
+			}
+		}
+
+		if *tools == "reverseipdomain" || *tools == "all" {
+			if *verbose {
+				fmt.Printf("Fetching from reverseipdomain for %s\n", domain)
+			}
+			subdomains, err := reverseipdomain.FetchSubdomains(domain)
+			if err != nil {
+				if *verbose {
+					fmt.Printf("Error fetching domains from reverseipdomain for %s: %v\n", domain, err)
 				}
 			} else {
 				for _, subdomain := range subdomains {
