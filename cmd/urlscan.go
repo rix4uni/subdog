@@ -1,4 +1,4 @@
-package urlscan
+package cmd
 
 import (
 	"encoding/json"
@@ -20,8 +20,8 @@ type URLScanResponse struct {
 	} `json:"results"`
 }
 
-// FetchSubdomains fetches subdomains for a given domain from the URLScan API
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsURLScan fetches subdomains for a given domain from the URLScan API
+func FetchSubdomainsURLScan(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://urlscan.io/api/v1/search/?q=domain:%s", domain)
 
 	resp, err := http.Get(url)

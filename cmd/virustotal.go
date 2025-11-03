@@ -1,4 +1,4 @@
-package virustotal
+package cmd
 
 import (
 	"encoding/json"
@@ -13,8 +13,8 @@ type VirusTotalResponse struct {
 	} `json:"data"`
 }
 
-// FetchSubdomains fetches subdomains for a given domain from VirusTotal API
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsVirusTotal fetches subdomains for a given domain from VirusTotal API
+func FetchSubdomainsVirusTotal(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://www.virustotal.com/ui/domains/%s/subdomains?limit=1000&relationships=resolutions", domain)
 
 	req, err := http.NewRequest("GET", url, nil)

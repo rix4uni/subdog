@@ -1,4 +1,4 @@
-package dnsdumpster
+package cmd
 
 import (
 	"bytes"
@@ -8,8 +8,8 @@ import (
 	"regexp"
 )
 
-// FetchSubdomains fetches subdomains from DNSDumpster for a given domain
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsDNSDumpster fetches subdomains from DNSDumpster for a given domain
+func FetchSubdomainsDNSDumpster(domain string) ([]string, error) {
 	url := "https://dnsdumpster.com/"
 	csrfToken := "vZGRO1YfdzdviMYTYZqLrw0PxsV5mlAnVGFadIqkjIAhiyNgi5w70hIj7uuzdmXx" // Hardcoded CSRF token
 

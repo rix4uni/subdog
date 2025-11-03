@@ -1,4 +1,4 @@
-package crtsh
+package cmd
 
 import (
 	"encoding/json"
@@ -14,8 +14,8 @@ type CsrData struct {
 	NameValue  string `json:"name_value"`
 }
 
-// FetchSubdomains fetches subdomains for a given domain from the crt.sh API
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsCrtsh fetches subdomains for a given domain from the crt.sh API
+func FetchSubdomainsCrtsh(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://crt.sh/?q=%s&output=json", domain)
 
 	resp, err := http.Get(url)

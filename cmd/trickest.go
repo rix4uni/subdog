@@ -1,4 +1,4 @@
-package trickest
+package cmd
 
 import (
 	"encoding/json"
@@ -14,8 +14,8 @@ type TrickestData struct {
 	Hostnames string `json:"hostnames"`
 }
 
-// FetchHostnames fetches hostnames for a given domain from the Trickest API
-func FetchHostnames(domain string) ([]string, error) {
+// FetchHostnamesTrickest fetches hostnames for a given domain from the Trickest API
+func FetchHostnamesTrickest(domain string) ([]string, error) {
 	// Fetch the Trickest targets JSON file
 	resp, err := http.Get("https://raw.githubusercontent.com/rix4uni/targets-filter/refs/heads/main/trickest-targets.json")
 	if err != nil {

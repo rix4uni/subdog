@@ -1,4 +1,4 @@
-package chaos
+package cmd
 
 import (
 	"archive/zip"
@@ -25,8 +25,8 @@ type ChaosData struct {
 	URL  string `json:"url"`
 }
 
-// Fetch and process domain data from chaos
-func ProcessDomain(domain string) {
+// ProcessDomainChaos fetches and processes domain data from chaos
+func ProcessDomainChaos(domain string) {
 	// Fetch bugbounty list
 	resp, err := http.Get("https://raw.githubusercontent.com/projectdiscovery/public-bugbounty-programs/main/chaos-bugbounty-list.json")
 	if err != nil {

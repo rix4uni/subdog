@@ -2,260 +2,462 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
-	"github.com/rix4uni/subdog/subdomaincenter"
-	"github.com/rix4uni/subdog/jldc"
-	"github.com/rix4uni/subdog/virustotal"
-	"github.com/rix4uni/subdog/alienvault"
-	"github.com/rix4uni/subdog/urlscan"
-	"github.com/rix4uni/subdog/certspotter"
-	"github.com/rix4uni/subdog/hackertarget"
-	"github.com/rix4uni/subdog/crtsh"
-	"github.com/rix4uni/subdog/trickest"
-	"github.com/rix4uni/subdog/subdomainfinder"
-	"github.com/rix4uni/subdog/chaos"
-	"github.com/rix4uni/subdog/merklemap"
-	"github.com/rix4uni/subdog/shodan"
-	"github.com/rix4uni/subdog/reverseipdomain"
 	"github.com/rix4uni/subdog/banner"
+	cmd "github.com/rix4uni/subdog/cmd"
+	"github.com/spf13/pflag"
 )
 
+var availableSources = []string{
+	"subdomaincenter",
+	"jldc",
+	"virustotal",
+	"alienvault",
+	"urlscan",
+	"certspotter",
+	"hackertarget",
+	"crtsh",
+	"trickest",
+	"subdomainfinder",
+	"chaos",
+	"merklemap",
+	"shodan",
+	"reverseipdomain",
+	"dnsdumpster",
+}
+
 func main() {
-	tools := flag.String("tools", "all", "Choose tools: subdomaincenter, jldc, virustotal, alienvault, urlscan, certspotter, hackertarget, crtsh, trickest, subdomainfinder, chaos, merklemap, shodan, reverseipdomain, or all")
-	silent := flag.Bool("silent", false, "silent mode.")
-	versionFlag := flag.Bool("version", false, "Print the version of the tool and exit.")
-	verbose := flag.Bool("verbose", false, "enable verbose mode")
-	flag.Parse()
+	sources := pflag.StringP("source", "s", "all", "Choose source(s) to use, or 'all' for all sources. Use --list-sources to see available sources")
+	excludeSources := pflag.StringP("exclude-source", "e", "", "Comma-separated list of sources to exclude when using --source all")
+	listSources := pflag.BoolP("list-sources", "l", false, "List all available sources and exit")
+	parallel := pflag.BoolP("parallel", "p", false, "Run all sources in parallel to speed up scanning")
+	silent := pflag.Bool("silent", false, "Silent mode.")
+	versionFlag := pflag.Bool("version", false, "Print the version of the tool and exit.")
+	verbose := pflag.Bool("verbose", false, "enable verbose mode")
+	pflag.Parse()
+
+	if *listSources {
+		fmt.Println("Available sources:")
+		for _, source := range availableSources {
+			fmt.Printf("  - %s\n", source)
+		}
+		fmt.Println("\nUse 'all' to run all sources")
+		return
+	}
+
+	// Parse excluded sources into a map for quick lookup
+	excludedMap := make(map[string]bool)
+	if *excludeSources != "" {
+		excluded := strings.Split(*excludeSources, ",")
+		for _, e := range excluded {
+			excludedMap[strings.TrimSpace(e)] = true
+		}
+	}
+
+	// Helper function to check if a source should be executed
+	shouldRun := func(sourceName string) bool {
+		// If source is specifically requested, check if it's excluded
+		if *sources == sourceName {
+			return !excludedMap[sourceName]
+		}
+		// If "all" is requested, check if this source is excluded
+		if *sources == "all" {
+			return !excludedMap[sourceName]
+		}
+		return false
+	}
 
 	if *versionFlag {
-        banner.PrintBanner()
-        banner.PrintVersion()
-        return
-    }
+		banner.PrintBanner()
+		banner.PrintVersion()
+		return
+	}
 
-    if !*silent {
-        banner.PrintBanner()
-    }
+	if !*silent {
+		banner.PrintBanner()
+	}
+
+	// Output mutex for thread-safe printing when using --parallel
+	var outputMutex sync.Mutex
+
+	// Function to process a single source
+	processSource := func(sourceName string, domain string, fetchFunc func(string) ([]string, error)) {
+		if !shouldRun(sourceName) {
+			return
+		}
+		if *verbose {
+			outputMutex.Lock()
+			fmt.Printf("Fetching from %s for %s\n", sourceName, domain)
+			outputMutex.Unlock()
+		}
+		results, err := fetchFunc(domain)
+		if err != nil {
+			if *verbose {
+				outputMutex.Lock()
+				fmt.Printf("Error fetching subdomains from %s for %s: %v\n", sourceName, domain, err)
+				outputMutex.Unlock()
+			}
+			return
+		}
+		outputMutex.Lock()
+		for _, result := range results {
+			fmt.Println(result)
+		}
+		outputMutex.Unlock()
+	}
+
+	// Function to process chaos source (special case - no return values)
+	processChaosSource := func(domain string) {
+		if !shouldRun("chaos") {
+			return
+		}
+		if *verbose {
+			outputMutex.Lock()
+			fmt.Printf("Fetching from Chaos for %s\n", domain)
+			outputMutex.Unlock()
+		}
+		outputMutex.Lock()
+		cmd.ProcessDomainChaos(domain)
+		outputMutex.Unlock()
+	}
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		domain := strings.TrimSpace(scanner.Text())
 
-		if *tools == "subdomaincenter" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from subdomaincenter for %s\n", domain)
-			}
-			subdomains, err := subdomaincenter.FetchSubdomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching subdomains from subdomaincenter for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+		if *parallel {
+			// Run all sources in parallel
+			var wg sync.WaitGroup
 
-		if *tools == "jldc" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from jldc for %s\n", domain)
-			}
-			subdomains, err := jldc.FetchSubdomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching subdomains from jldc for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("subdomaincenter", domain, cmd.FetchSubdomainsSubdomaincenter)
+			}()
 
-		if *tools == "virustotal" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from VirusTotal for %s\n", domain)
-			}
-			subdomains, err := virustotal.FetchSubdomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching subdomains from VirusTotal for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("jldc", domain, cmd.FetchSubdomainsJldc)
+			}()
 
-		if *tools == "alienvault" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from AlienVault for %s\n", domain)
-			}
-			subdomains, err := alienvault.FetchSubdomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching subdomains from AlienVault for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("virustotal", domain, cmd.FetchSubdomainsVirusTotal)
+			}()
 
-		if *tools == "urlscan" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from URLScan for %s\n", domain)
-			}
-			subdomains, err := urlscan.FetchSubdomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching subdomains from URLScan for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("alienvault", domain, cmd.FetchSubdomainsAlienVault)
+			}()
 
-		if *tools == "certspotter" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from Certspotter for %s\n", domain)
-			}
-			dnsNames, err := certspotter.FetchDNSNames(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching DNS names from Certspotter for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, dnsName := range dnsNames {
-					fmt.Println(dnsName)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("urlscan", domain, cmd.FetchSubdomainsURLScan)
+			}()
 
-		if *tools == "hackertarget" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from HackerTarget for %s\n", domain)
-			}
-			subdomains, err := hackertarget.FetchSubdomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching subdomains from HackerTarget for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("certspotter", domain, func(d string) ([]string, error) {
+					return cmd.FetchDNSNamesCertspotter(d)
+				})
+			}()
 
-		if *tools == "crtsh" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from crt.sh for %s\n", domain)
-			}
-			subdomains, err := crtsh.FetchSubdomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching subdomains from crt.sh for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("hackertarget", domain, cmd.FetchSubdomainsHackerTarget)
+			}()
 
-		if *tools == "trickest" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from Trickest for %s\n", domain)
-			}
-			hostnames, err := trickest.FetchHostnames(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching hostnames from Trickest for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, hostname := range hostnames {
-					fmt.Println(hostname)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("crtsh", domain, cmd.FetchSubdomainsCrtsh)
+			}()
 
-		if *tools == "subdomainfinder" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from Subdomain Finder for %s\n", domain)
-			}
-			subdomains, err := subdomainfinder.FetchSubdomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching subdomains from Subdomain Finder for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("trickest", domain, func(d string) ([]string, error) {
+					return cmd.FetchHostnamesTrickest(d)
+				})
+			}()
 
-		if *tools == "chaos" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from Chaos for %s\n", domain)
-			}
-			chaos.ProcessDomain(domain)
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("subdomainfinder", domain, cmd.FetchSubdomainsSubdomainFinder)
+			}()
 
-		if *tools == "merklemap" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from shodan for %s\n", domain)
-			}
-			subdomains, err := merklemap.FetchDomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching domains from shodan for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processChaosSource(domain)
+			}()
 
-		if *tools == "shodan" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from MerkleMap for %s\n", domain)
-			}
-			subdomains, err := shodan.FetchSubdomains(domain)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error fetching domains from MerkleMap for %s: %v\n", domain, err)
-				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
-				}
-			}
-		}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("merklemap", domain, cmd.FetchDomainsMerkleMap)
+			}()
 
-		if *tools == "reverseipdomain" || *tools == "all" {
-			if *verbose {
-				fmt.Printf("Fetching from reverseipdomain for %s\n", domain)
-			}
-			subdomains, err := reverseipdomain.FetchSubdomains(domain)
-			if err != nil {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("shodan", domain, cmd.FetchSubdomainsShodan)
+			}()
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("reverseipdomain", domain, cmd.FetchSubdomainsReverseIPDomain)
+			}()
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("dnsdumpster", domain, cmd.FetchSubdomainsDNSDumpster)
+			}()
+
+			wg.Wait()
+		} else {
+			// Sequential execution
+			if shouldRun("subdomaincenter") {
 				if *verbose {
-					fmt.Printf("Error fetching domains from reverseipdomain for %s: %v\n", domain, err)
+					fmt.Printf("Fetching from subdomaincenter for %s\n", domain)
 				}
-			} else {
-				for _, subdomain := range subdomains {
-					fmt.Println(subdomain)
+				subdomains, err := cmd.FetchSubdomainsSubdomaincenter(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from subdomaincenter for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("jldc") {
+				if *verbose {
+					fmt.Printf("Fetching from jldc for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsJldc(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from jldc for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("virustotal") {
+				if *verbose {
+					fmt.Printf("Fetching from VirusTotal for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsVirusTotal(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from VirusTotal for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("alienvault") {
+				if *verbose {
+					fmt.Printf("Fetching from AlienVault for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsAlienVault(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from AlienVault for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("urlscan") {
+				if *verbose {
+					fmt.Printf("Fetching from URLScan for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsURLScan(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from URLScan for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("certspotter") {
+				if *verbose {
+					fmt.Printf("Fetching from Certspotter for %s\n", domain)
+				}
+				dnsNames, err := cmd.FetchDNSNamesCertspotter(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching DNS names from Certspotter for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, dnsName := range dnsNames {
+						fmt.Println(dnsName)
+					}
+				}
+			}
+
+			if shouldRun("hackertarget") {
+				if *verbose {
+					fmt.Printf("Fetching from HackerTarget for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsHackerTarget(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from HackerTarget for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("crtsh") {
+				if *verbose {
+					fmt.Printf("Fetching from crt.sh for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsCrtsh(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from crt.sh for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("trickest") {
+				if *verbose {
+					fmt.Printf("Fetching from Trickest for %s\n", domain)
+				}
+				hostnames, err := cmd.FetchHostnamesTrickest(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching hostnames from Trickest for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, hostname := range hostnames {
+						fmt.Println(hostname)
+					}
+				}
+			}
+
+			if shouldRun("subdomainfinder") {
+				if *verbose {
+					fmt.Printf("Fetching from Subdomain Finder for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsSubdomainFinder(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from Subdomain Finder for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("chaos") {
+				if *verbose {
+					fmt.Printf("Fetching from Chaos for %s\n", domain)
+				}
+				cmd.ProcessDomainChaos(domain)
+			}
+
+			if shouldRun("merklemap") {
+				if *verbose {
+					fmt.Printf("Fetching from shodan for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchDomainsMerkleMap(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching domains from shodan for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("shodan") {
+				if *verbose {
+					fmt.Printf("Fetching from MerkleMap for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsShodan(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching domains from MerkleMap for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("reverseipdomain") {
+				if *verbose {
+					fmt.Printf("Fetching from reverseipdomain for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsReverseIPDomain(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching domains from reverseipdomain for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
+				}
+			}
+
+			if shouldRun("dnsdumpster") {
+				if *verbose {
+					fmt.Printf("Fetching from DNSDumpster for %s\n", domain)
+				}
+				subdomains, err := cmd.FetchSubdomainsDNSDumpster(domain)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from DNSDumpster for %s: %v\n", domain, err)
+					}
+				} else {
+					for _, subdomain := range subdomains {
+						fmt.Println(subdomain)
+					}
 				}
 			}
 		}

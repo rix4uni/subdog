@@ -1,4 +1,4 @@
-package subdomainfinder
+package cmd
 
 import (
 	"bytes"
@@ -8,8 +8,8 @@ import (
 	"regexp"
 )
 
-// FetchSubdomains fetches subdomains for a given domain from the subdomainfinder API
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsSubdomainFinder fetches subdomains for a given domain from the subdomainfinder API
+func FetchSubdomainsSubdomainFinder(domain string) ([]string, error) {
 	url := "https://subdomainfinder.c99.nl/"
 
 	// Prepare the POST request

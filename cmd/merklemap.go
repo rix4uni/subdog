@@ -1,4 +1,4 @@
-package merklemap
+package cmd
 
 import (
 	"bufio"
@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// FetchDomains fetches subdomains for a given domain from the MerkleMap API
-func FetchDomains(domain string) ([]string, error) {
+// FetchDomainsMerkleMap fetches subdomains for a given domain from the MerkleMap API
+func FetchDomainsMerkleMap(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://api.merklemap.com/search?query=%s&stream=true", domain)
 
 	resp, err := http.Get(url)

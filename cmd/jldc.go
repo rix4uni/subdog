@@ -1,4 +1,4 @@
-package jldc
+package cmd
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// FetchSubdomains fetches subdomains for a given domain from the jldc.me API
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsJldc fetches subdomains for a given domain from the jldc.me API
+func FetchSubdomainsJldc(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://jldc.me/anubis/subdomains/%s", domain)
 
 	resp, err := http.Get(url)

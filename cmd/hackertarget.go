@@ -1,4 +1,4 @@
-package hackertarget
+package cmd
 
 import (
 	"encoding/csv"
@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-// FetchSubdomains fetches subdomains for a given domain from the HackerTarget API
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsHackerTarget fetches subdomains for a given domain from the HackerTarget API
+func FetchSubdomainsHackerTarget(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://api.hackertarget.com/hostsearch/?q=%s", domain)
 
 	resp, err := http.Get(url)

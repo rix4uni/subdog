@@ -1,4 +1,4 @@
-package shodan
+package cmd
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// FetchSubdomains fetches subdomains for a given domain from the Shodan
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsShodan fetches subdomains for a given domain from the Shodan
+func FetchSubdomainsShodan(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://api.shodan.io/dns/domain/%s", domain)
 
 	resp, err := http.Get(url)

@@ -1,4 +1,4 @@
-package certspotter
+package cmd
 
 import (
 	"encoding/json"
@@ -11,8 +11,8 @@ type CertspotterResponse []struct {
 	DNSNames []string `json:"dns_names"`
 }
 
-// FetchDNSNames fetches DNS names for a given domain from the Certspotter API
-func FetchDNSNames(domain string) ([]string, error) {
+// FetchDNSNamesCertspotter fetches DNS names for a given domain from the Certspotter API
+func FetchDNSNamesCertspotter(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://api.certspotter.com/v1/issuances?domain=%s&include_subdomains=true&expand=dns_names", domain)
 
 	resp, err := http.Get(url)

@@ -1,4 +1,4 @@
-package alienvault
+package cmd
 
 import (
 	"encoding/json"
@@ -13,8 +13,8 @@ type AlienVaultResponse struct {
 	} `json:"passive_dns"`
 }
 
-// FetchSubdomains fetches subdomains for a given domain from the AlienVault API
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsAlienVault fetches subdomains for a given domain from the AlienVault API
+func FetchSubdomainsAlienVault(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://otx.alienvault.com/api/v1/indicators/domain/%s/passive_dns", domain)
 
 	resp, err := http.Get(url)

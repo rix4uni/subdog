@@ -1,4 +1,4 @@
-package subdomaincenter
+package cmd
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// FetchSubdomains fetches subdomains for a given domain from the API
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsSubdomaincenter fetches subdomains for a given domain from the API
+func FetchSubdomainsSubdomaincenter(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://api.subdomain.center/?domain=%s", domain)
 
 	resp, err := http.Get(url)

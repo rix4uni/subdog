@@ -1,4 +1,4 @@
-package reverseipdomain
+package cmd
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// FetchSubdomains fetches subdomains for a given domain from the Reverse IP Domain API
-func FetchSubdomains(domain string) ([]string, error) {
+// FetchSubdomainsReverseIPDomain fetches subdomains for a given domain from the Reverse IP Domain API
+func FetchSubdomainsReverseIPDomain(domain string) ([]string, error) {
 	url := fmt.Sprintf("https://sub-scan-api.reverseipdomain.com/?domain=%s", domain)
 
 	resp, err := http.Get(url)
