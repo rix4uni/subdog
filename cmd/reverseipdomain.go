@@ -33,5 +33,22 @@ func FetchSubdomainsReverseIPDomain(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	return response.Result.Domains, nil
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
+	for _, domainName := range response.Result.Domains {
+		if isSubdomainOrDomain(domainName, domain) {
+			normalized := NormalizeSubdomain(domainName)
+			if normalized != "" {
+				subdomainMap[normalized] = true
+			}
+		}
+	}
+
+	// Convert map to slice
+	filteredDomains := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		filteredDomains = append(filteredDomains, subdomain)
+	}
+
+	return filteredDomains, nil
 }

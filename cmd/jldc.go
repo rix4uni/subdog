@@ -22,10 +22,27 @@ func FetchSubdomainsJldc(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	var subdomains []string
-	err = json.Unmarshal(body, &subdomains)
+	var rawSubdomains []string
+	err = json.Unmarshal(body, &rawSubdomains)
 	if err != nil {
 		return nil, err
+	}
+
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
+	for _, subdomain := range rawSubdomains {
+		if isSubdomainOrDomain(subdomain, domain) {
+			normalized := NormalizeSubdomain(subdomain)
+			if normalized != "" {
+				subdomainMap[normalized] = true
+			}
+		}
+	}
+
+	// Convert map to slice
+	subdomains := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		subdomains = append(subdomains, subdomain)
 	}
 
 	return subdomains, nil

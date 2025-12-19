@@ -18,7 +18,8 @@ func FetchDomainsMerkleMap(domain string) ([]string, error) {
 	defer resp.Body.Close()
 
 	scanner := bufio.NewScanner(resp.Body)
-	var subdomains []string
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -28,13 +29,25 @@ func FetchDomainsMerkleMap(domain string) ([]string, error) {
 			if strings.Contains(line, `"domain"`) {
 				domainStart := strings.Index(line, `"domain":"`) + 10
 				domainEnd := strings.Index(line[domainStart:], `"`) + domainStart
-				subdomains = append(subdomains, line[domainStart:domainEnd])
+				domainName := line[domainStart:domainEnd]
+				if isSubdomainOrDomain(domainName, domain) {
+					normalized := NormalizeSubdomain(domainName)
+					if normalized != "" {
+						subdomainMap[normalized] = true
+					}
+				}
 			}
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		return nil, err
+	}
+
+	// Convert map to slice
+	subdomains := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		subdomains = append(subdomains, subdomain)
 	}
 
 	return subdomains, nil

@@ -46,22 +46,23 @@ func FetchSubdomainsSubdomainFinder(domain string) ([]string, error) {
 	subdomainRegex := regexp.MustCompile(`href='//([^']+)'`)
 	subdomainMatches := subdomainRegex.FindAllStringSubmatch(string(body), -1)
 
-	// Collect unique subdomains
-	subdomainMap := make(map[string]struct{})
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
 	for _, match := range subdomainMatches {
 		if len(match) > 1 {
-			subdomainMap[match[1]] = struct{}{}
+			subdomain := match[1]
+			if isSubdomainOrDomain(subdomain, domain) {
+				normalized := NormalizeSubdomain(subdomain)
+				if normalized != "" {
+					subdomainMap[normalized] = true
+				}
+			}
 		}
 	}
 
 	uniqueSubdomains := make([]string, 0, len(subdomainMap))
 	for sub := range subdomainMap {
 		uniqueSubdomains = append(uniqueSubdomains, sub)
-	}
-
-	// If no subdomains were found, return an error
-	if len(uniqueSubdomains) == 0 {
-		return nil, fmt.Errorf("no subdomains found for %s", domain)
 	}
 
 	return uniqueSubdomains, nil

@@ -34,22 +34,57 @@ func FetchSubdomainsCrtsh(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	var results []string
-	for _, cert := range certs {
-		// Split the NameValue field by commas and then by spaces
-		names := strings.FieldsFunc(cert.NameValue, func(r rune) bool {
-			return r == ',' || r == ' '
-		})
-		results = append(results, names...)
-	}
-
-	// Print results directly without duplicates
-	for _, result := range results {
-		trimmedResult := strings.TrimSpace(result)
-		if trimmedResult != "" {
-			fmt.Println(trimmedResult)
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
+	
+	// Helper function to process a name string (can contain multiple subdomains)
+	processNameString := func(nameStr string) {
+		if nameStr == "" {
+			return
+		}
+		// Split by newlines first, then by commas, then by spaces
+		// This handles all possible delimiters in the name_value field
+		lines := strings.Split(nameStr, "\n")
+		for _, line := range lines {
+			// Split by commas
+			commaParts := strings.Split(line, ",")
+			for _, commaPart := range commaParts {
+				// Split by spaces
+				spaceParts := strings.Fields(commaPart)
+				for _, name := range spaceParts {
+					trimmedName := strings.TrimSpace(name)
+					if trimmedName != "" && isSubdomainOrDomain(trimmedName, domain) {
+						normalized := NormalizeSubdomain(trimmedName)
+						if normalized != "" {
+							subdomainMap[normalized] = true
+						}
+					}
+				}
+			}
 		}
 	}
+	
+	for _, cert := range certs {
+		// Process CommonName field
+		if cert.CommonName != "" {
+			trimmedCN := strings.TrimSpace(cert.CommonName)
+			if trimmedCN != "" && isSubdomainOrDomain(trimmedCN, domain) {
+				normalized := NormalizeSubdomain(trimmedCN)
+				if normalized != "" {
+					subdomainMap[normalized] = true
+				}
+			}
+		}
+		
+		// Process NameValue field (can contain multiple subdomains)
+		processNameString(cert.NameValue)
+	}
 
-	return results, nil // Return results in case it's needed elsewhere
+	// Convert map to slice
+	results := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		results = append(results, subdomain)
+	}
+
+	return results, nil
 }

@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/rix4uni/subdog/banner"
 	cmd "github.com/rix4uni/subdog/cmd"
@@ -28,6 +30,173 @@ var availableSources = []string{
 	"shodan",
 	"reverseipdomain",
 	"dnsdumpster",
+	"bugbountydata",
+}
+
+// SourceStat tracks statistics for a single source execution
+type SourceStat struct {
+	Name     string
+	Count    int
+	Duration time.Duration
+	Error    error
+	ErrorMsg string
+}
+
+// formatNumber formats a number with comma separators
+func formatNumber(n int) string {
+	s := fmt.Sprintf("%d", n)
+	if n < 1000 {
+		return s
+	}
+	var result strings.Builder
+	for i, r := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			result.WriteString(",")
+		}
+		result.WriteRune(r)
+	}
+	return result.String()
+}
+
+// formatDuration formats duration to string with appropriate precision
+func formatDuration(d time.Duration) string {
+	seconds := d.Seconds()
+	if seconds < 1 {
+		return fmt.Sprintf("%.3fs", seconds)
+	}
+	return fmt.Sprintf("%.3fs", seconds)
+}
+
+// printSummary prints a formatted summary table with box-drawing characters
+func printSummary(stats []SourceStat, totalDuration time.Duration, domain string) {
+	fmt.Println()
+	fmt.Println("╔══════════════════════════════════════════════════════════╗")
+	// Format title to fit exactly 60 characters (including borders)
+	// Title text: "Subdomain Enumeration Summary - " (35 chars) + domain (max 23 chars) = 58 chars total
+	titlePrefix := "Subdomain Enumeration Summary - "
+	maxDomainLen := 58 - len(titlePrefix)
+	domainDisplay := domain
+	if len(domainDisplay) > maxDomainLen {
+		domainDisplay = domainDisplay[:maxDomainLen-3] + "..."
+	}
+	title := fmt.Sprintf("%s%s", titlePrefix, domainDisplay)
+	// Pad to exactly 58 characters (60 - 2 borders)
+	if len(title) < 58 {
+		title = title + strings.Repeat(" ", 58-len(title))
+	}
+	fmt.Printf("║%s║\n", title)
+	fmt.Println("╠═══════════════════╦═════════╦═══════════╦════════════════╣")
+	fmt.Println("║ Source            ║ Count   ║ Time      ║ Status         ║")
+	fmt.Println("╠═══════════════════╬═════════╬═══════════╬════════════════╣")
+
+	totalCount := 0
+	for _, stat := range stats {
+		totalCount += stat.Count
+		durationStr := formatDuration(stat.Duration)
+
+		// Truncate source name if too long (max 17 chars)
+		sourceName := stat.Name
+		if len(sourceName) > 17 {
+			sourceName = sourceName[:14] + "..."
+		}
+
+		// Format count (max 7 chars)
+		countStr := formatNumber(stat.Count)
+		if len(countStr) > 7 {
+			countStr = countStr[:4] + "..."
+		}
+
+		// Format duration (max 9 chars)
+		if len(durationStr) > 9 {
+			durationStr = durationStr[:6] + "..."
+		}
+
+		// Format status (max 14 chars)
+		status := "✓ Success"
+		if stat.Error != nil {
+			errorMsg := stat.ErrorMsg
+			// Account for "✗ " prefix (2 chars), so max 12 chars for error message
+			if len(errorMsg) > 12 {
+				errorMsg = errorMsg[:9] + "..."
+			}
+			status = fmt.Sprintf("✗ %s", errorMsg)
+		}
+		if len(status) > 14 {
+			status = status[:11] + "..."
+		}
+
+		fmt.Printf("║ %-17s ║ %-7s ║ %-9s ║ %-14s ║\n",
+			sourceName, countStr, durationStr, status)
+	}
+
+	fmt.Println("╠═══════════════════╬═════════╬═══════════╬════════════════╣")
+
+	// Format total count and duration to fit column widths
+	totalCountStr := formatNumber(totalCount)
+	if len(totalCountStr) > 7 {
+		totalCountStr = totalCountStr[:4] + "..."
+	}
+	totalDurationStr := formatDuration(totalDuration)
+	if len(totalDurationStr) > 9 {
+		totalDurationStr = totalDurationStr[:6] + "..."
+	}
+
+	fmt.Printf("║ TOTAL             ║ %-7s ║ %-9s ║                ║\n",
+		totalCountStr, totalDurationStr)
+	fmt.Println("╚═══════════════════╩═════════╩═══════════╩════════════════╝")
+	fmt.Println()
+}
+
+// uniqueFileWriter writes unique lines to stdout and file
+type uniqueFileWriter struct {
+	file           *os.File
+	seenSubdomains map[string]bool
+	writtenToFile  map[string]bool
+	mutex          *sync.Mutex
+}
+
+// Ensure uniqueFileWriter implements io.Writer
+var _ io.Writer = (*uniqueFileWriter)(nil)
+
+// Write implements io.Writer - writes unique lines to stdout and file
+func (w *uniqueFileWriter) Write(p []byte) (n int, err error) {
+	text := strings.TrimSpace(string(p))
+	if text == "" {
+		return len(p), nil
+	}
+
+	// Normalize the text (filter wildcards, emails, lowercase)
+	normalized := cmd.NormalizeSubdomain(text)
+	if normalized == "" {
+		return len(p), nil // Filter out emails and wildcards
+	}
+
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	// Write to stdout if we haven't seen this subdomain before
+	if !w.seenSubdomains[normalized] {
+		_, err = fmt.Println(normalized)
+		if err != nil {
+			return len(p), err
+		}
+		w.seenSubdomains[normalized] = true
+	}
+
+	// Write to file if specified and not already written to file
+	// Mark BEFORE writing to prevent race conditions (defensive approach)
+	if w.file != nil && !w.writtenToFile[normalized] {
+		w.writtenToFile[normalized] = true        // Mark first to prevent other goroutines from writing
+		_, err = fmt.Fprintln(w.file, normalized) // Then write
+		if err != nil {
+			// If write fails, unmark to allow retry (though this is unlikely)
+			w.writtenToFile[normalized] = false
+			return len(p), err
+		}
+	}
+
+	n = len(p)
+	return n, err
 }
 
 func main() {
@@ -38,6 +207,7 @@ func main() {
 	silent := pflag.Bool("silent", false, "Silent mode.")
 	versionFlag := pflag.Bool("version", false, "Print the version of the tool and exit.")
 	verbose := pflag.Bool("verbose", false, "enable verbose mode")
+	outputFile := pflag.StringP("output", "o", "", "Save subdomain results to a file")
 	pflag.Parse()
 
 	if *listSources {
@@ -81,53 +251,165 @@ func main() {
 		banner.PrintBanner()
 	}
 
+	// Open output file if specified
+	var file *os.File
+	var fileErr error
+	if *outputFile != "" {
+		file, fileErr = os.Create(*outputFile)
+		if fileErr != nil {
+			fmt.Fprintf(os.Stderr, "Error creating output file: %v\n", fileErr)
+			return
+		}
+		defer func() {
+			file.Sync() // Ensure all writes are flushed
+			file.Close()
+		}()
+	}
+
 	// Output mutex for thread-safe printing when using --parallel
 	var outputMutex sync.Mutex
 
-	// Function to process a single source
-	processSource := func(sourceName string, domain string, fetchFunc func(string) ([]string, error)) {
-		if !shouldRun(sourceName) {
-			return
-		}
-		if *verbose {
-			outputMutex.Lock()
-			fmt.Printf("Fetching from %s for %s\n", sourceName, domain)
-			outputMutex.Unlock()
-		}
-		results, err := fetchFunc(domain)
-		if err != nil {
-			if *verbose {
-				outputMutex.Lock()
-				fmt.Printf("Error fetching subdomains from %s for %s: %v\n", sourceName, domain, err)
-				outputMutex.Unlock()
-			}
-			return
-		}
-		outputMutex.Lock()
-		for _, result := range results {
-			fmt.Println(result)
-		}
-		outputMutex.Unlock()
+	// Track unique subdomains for stdout (prevents duplicate stdout output)
+	seenSubdomains := make(map[string]bool)
+	// Track what's been written to file (prevents duplicate file writes)
+	writtenToFile := make(map[string]bool)
+
+	// Create unique writer for chaos source (writes unique lines to stdout and file)
+	uniqueWriter := &uniqueFileWriter{
+		file:           file,
+		seenSubdomains: seenSubdomains,
+		writtenToFile:  writtenToFile,
+		mutex:          &outputMutex,
 	}
 
-	// Function to process chaos source (special case - no return values)
-	processChaosSource := func(domain string) {
-		if !shouldRun("chaos") {
-			return
+	// Helper function to write output to both file and stdout
+	// Both stdout and file only get unique lines (atomic operation)
+	writeOutput := func(text string) {
+		// Normalize the text first (filter wildcards, emails, lowercase)
+		normalized := cmd.NormalizeSubdomain(text)
+		if normalized == "" {
+			return // Skip if filtered out
 		}
-		if *verbose {
-			outputMutex.Lock()
-			fmt.Printf("Fetching from Chaos for %s\n", domain)
-			outputMutex.Unlock()
-		}
+
 		outputMutex.Lock()
-		cmd.ProcessDomainChaos(domain)
-		outputMutex.Unlock()
+		defer outputMutex.Unlock()
+
+		// Write to stdout if we haven't seen this subdomain before
+		if !seenSubdomains[normalized] {
+			fmt.Println(normalized)
+			seenSubdomains[normalized] = true
+		}
+
+		// Write to file if specified and not already written to file
+		// Mark BEFORE writing to prevent race conditions (defensive approach)
+		if file != nil && !writtenToFile[normalized] {
+			writtenToFile[normalized] = true // Mark first to prevent other goroutines from writing
+			fmt.Fprintln(file, normalized)   // Then write
+		}
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		domain := strings.TrimSpace(scanner.Text())
+
+		// Statistics tracking for this domain
+		var stats []SourceStat
+		var statsMutex sync.Mutex
+		domainStartTime := time.Now()
+
+		// Function to process a single source
+		processSource := func(sourceName string, domain string, fetchFunc func(string) ([]string, error)) {
+			if !shouldRun(sourceName) {
+				return
+			}
+			startTime := time.Now()
+			if *verbose {
+				outputMutex.Lock()
+				fmt.Printf("Fetching from %s for %s\n", sourceName, domain)
+				outputMutex.Unlock()
+			}
+			results, err := fetchFunc(domain)
+			duration := time.Since(startTime)
+
+			if err != nil {
+				if *verbose {
+					outputMutex.Lock()
+					fmt.Printf("Error fetching subdomains from %s for %s: %v\n", sourceName, domain, err)
+					outputMutex.Unlock()
+				}
+				statsMutex.Lock()
+				stats = append(stats, SourceStat{
+					Name:     sourceName,
+					Count:    0,
+					Duration: duration,
+					Error:    err,
+					ErrorMsg: err.Error(),
+				})
+				statsMutex.Unlock()
+				return
+			}
+
+			// Count unique subdomains written by this source (must be done inside mutex)
+			outputMutex.Lock()
+			countBefore := len(seenSubdomains)
+			outputMutex.Unlock()
+
+			for _, result := range results {
+				writeOutput(result)
+			}
+
+			outputMutex.Lock()
+			countAfter := len(seenSubdomains)
+			count := countAfter - countBefore
+			outputMutex.Unlock()
+
+			statsMutex.Lock()
+			stats = append(stats, SourceStat{
+				Name:     sourceName,
+				Count:    count,
+				Duration: duration,
+				Error:    nil,
+			})
+			statsMutex.Unlock()
+		}
+
+		// Function to process chaos source (special case - no return values)
+		processChaosSource := func(domain string) {
+			if !shouldRun("chaos") {
+				return
+			}
+			startTime := time.Now()
+			if *verbose {
+				outputMutex.Lock()
+				fmt.Printf("Fetching from Chaos for %s\n", domain)
+				outputMutex.Unlock()
+			}
+
+			// Track count before chaos execution (lock, read, unlock)
+			outputMutex.Lock()
+			countBefore := len(seenSubdomains)
+			outputMutex.Unlock()
+
+			// Call ProcessDomainChaos WITHOUT holding the mutex
+			// uniqueFileWriter.Write will handle its own mutex locking
+			cmd.ProcessDomainChaos(domain, uniqueWriter)
+
+			// Count new unique subdomains added by chaos (lock, read, unlock)
+			outputMutex.Lock()
+			countAfter := len(seenSubdomains)
+			chaosCount := countAfter - countBefore
+			outputMutex.Unlock()
+
+			duration := time.Since(startTime)
+			statsMutex.Lock()
+			stats = append(stats, SourceStat{
+				Name:     "chaos",
+				Count:    chaosCount,
+				Duration: duration,
+				Error:    nil,
+			})
+			statsMutex.Unlock()
+		}
 
 		if *parallel {
 			// Run all sources in parallel
@@ -227,238 +509,121 @@ func main() {
 				processSource("dnsdumpster", domain, cmd.FetchSubdomainsDNSDumpster)
 			}()
 
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("bugbountydata", domain, cmd.FetchSubdomainsBugBountyData)
+			}()
+
 			wg.Wait()
+
+			// Print summary for parallel execution
+			if *verbose {
+				totalDuration := time.Since(domainStartTime)
+				printSummary(stats, totalDuration, domain)
+			}
 		} else {
 			// Sequential execution
-			if shouldRun("subdomaincenter") {
-				if *verbose {
-					fmt.Printf("Fetching from subdomaincenter for %s\n", domain)
+			// Helper function for sequential source processing with stats tracking
+			processSequentialSource := func(sourceName string, fetchFunc func(string) ([]string, error)) {
+				if !shouldRun(sourceName) {
+					return
 				}
-				subdomains, err := cmd.FetchSubdomainsSubdomaincenter(domain)
+				startTime := time.Now()
+				if *verbose {
+					fmt.Printf("Fetching from %s for %s\n", sourceName, domain)
+				}
+				subdomains, err := fetchFunc(domain)
+				duration := time.Since(startTime)
 				if err != nil {
 					if *verbose {
-						fmt.Printf("Error fetching subdomains from subdomaincenter for %s: %v\n", domain, err)
+						fmt.Printf("Error fetching subdomains from %s for %s: %v\n", sourceName, domain, err)
 					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
+					stats = append(stats, SourceStat{
+						Name:     sourceName,
+						Count:    0,
+						Duration: duration,
+						Error:    err,
+						ErrorMsg: err.Error(),
+					})
+					return
 				}
+				// Count unique subdomains written by this source (must be done inside mutex)
+				outputMutex.Lock()
+				countBefore := len(seenSubdomains)
+				outputMutex.Unlock()
+
+				for _, subdomain := range subdomains {
+					writeOutput(subdomain)
+				}
+
+				outputMutex.Lock()
+				countAfter := len(seenSubdomains)
+				count := countAfter - countBefore
+				outputMutex.Unlock()
+				stats = append(stats, SourceStat{
+					Name:     sourceName,
+					Count:    count,
+					Duration: duration,
+					Error:    nil,
+				})
 			}
 
-			if shouldRun("jldc") {
-				if *verbose {
-					fmt.Printf("Fetching from jldc for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsJldc(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching subdomains from jldc for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
+			processSequentialSource("subdomaincenter", cmd.FetchSubdomainsSubdomaincenter)
+			processSequentialSource("jldc", cmd.FetchSubdomainsJldc)
+			processSequentialSource("virustotal", cmd.FetchSubdomainsVirusTotal)
+			processSequentialSource("alienvault", cmd.FetchSubdomainsAlienVault)
+			processSequentialSource("urlscan", cmd.FetchSubdomainsURLScan)
+			processSequentialSource("certspotter", func(d string) ([]string, error) {
+				return cmd.FetchDNSNamesCertspotter(d)
+			})
+			processSequentialSource("hackertarget", cmd.FetchSubdomainsHackerTarget)
+			processSequentialSource("crtsh", cmd.FetchSubdomainsCrtsh)
+			processSequentialSource("trickest", func(d string) ([]string, error) {
+				return cmd.FetchHostnamesTrickest(d)
+			})
+			processSequentialSource("subdomainfinder", cmd.FetchSubdomainsSubdomainFinder)
 
-			if shouldRun("virustotal") {
-				if *verbose {
-					fmt.Printf("Fetching from VirusTotal for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsVirusTotal(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching subdomains from VirusTotal for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
-
-			if shouldRun("alienvault") {
-				if *verbose {
-					fmt.Printf("Fetching from AlienVault for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsAlienVault(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching subdomains from AlienVault for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
-
-			if shouldRun("urlscan") {
-				if *verbose {
-					fmt.Printf("Fetching from URLScan for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsURLScan(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching subdomains from URLScan for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
-
-			if shouldRun("certspotter") {
-				if *verbose {
-					fmt.Printf("Fetching from Certspotter for %s\n", domain)
-				}
-				dnsNames, err := cmd.FetchDNSNamesCertspotter(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching DNS names from Certspotter for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, dnsName := range dnsNames {
-						fmt.Println(dnsName)
-					}
-				}
-			}
-
-			if shouldRun("hackertarget") {
-				if *verbose {
-					fmt.Printf("Fetching from HackerTarget for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsHackerTarget(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching subdomains from HackerTarget for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
-
-			if shouldRun("crtsh") {
-				if *verbose {
-					fmt.Printf("Fetching from crt.sh for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsCrtsh(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching subdomains from crt.sh for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
-
-			if shouldRun("trickest") {
-				if *verbose {
-					fmt.Printf("Fetching from Trickest for %s\n", domain)
-				}
-				hostnames, err := cmd.FetchHostnamesTrickest(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching hostnames from Trickest for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, hostname := range hostnames {
-						fmt.Println(hostname)
-					}
-				}
-			}
-
-			if shouldRun("subdomainfinder") {
-				if *verbose {
-					fmt.Printf("Fetching from Subdomain Finder for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsSubdomainFinder(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching subdomains from Subdomain Finder for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
-
+			// Handle chaos source in sequential mode
 			if shouldRun("chaos") {
+				startTime := time.Now()
 				if *verbose {
 					fmt.Printf("Fetching from Chaos for %s\n", domain)
 				}
-				cmd.ProcessDomainChaos(domain)
+				// Track count before chaos execution (lock, read, unlock)
+				outputMutex.Lock()
+				countBefore := len(seenSubdomains)
+				outputMutex.Unlock()
+
+				// Call ProcessDomainChaos WITHOUT holding the mutex
+				// uniqueFileWriter.Write will handle its own mutex locking
+				cmd.ProcessDomainChaos(domain, uniqueWriter)
+
+				// Count new unique subdomains added by chaos (lock, read, unlock)
+				outputMutex.Lock()
+				countAfter := len(seenSubdomains)
+				chaosCount := countAfter - countBefore
+				outputMutex.Unlock()
+
+				duration := time.Since(startTime)
+				stats = append(stats, SourceStat{
+					Name:     "chaos",
+					Count:    chaosCount,
+					Duration: duration,
+					Error:    nil,
+				})
 			}
 
-			if shouldRun("merklemap") {
-				if *verbose {
-					fmt.Printf("Fetching from shodan for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchDomainsMerkleMap(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching domains from shodan for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
+			processSequentialSource("merklemap", cmd.FetchDomainsMerkleMap)
+			processSequentialSource("shodan", cmd.FetchSubdomainsShodan)
+			processSequentialSource("reverseipdomain", cmd.FetchSubdomainsReverseIPDomain)
+			processSequentialSource("dnsdumpster", cmd.FetchSubdomainsDNSDumpster)
+			processSequentialSource("bugbountydata", cmd.FetchSubdomainsBugBountyData)
 
-			if shouldRun("shodan") {
-				if *verbose {
-					fmt.Printf("Fetching from MerkleMap for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsShodan(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching domains from MerkleMap for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
-
-			if shouldRun("reverseipdomain") {
-				if *verbose {
-					fmt.Printf("Fetching from reverseipdomain for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsReverseIPDomain(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching domains from reverseipdomain for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
-			}
-
-			if shouldRun("dnsdumpster") {
-				if *verbose {
-					fmt.Printf("Fetching from DNSDumpster for %s\n", domain)
-				}
-				subdomains, err := cmd.FetchSubdomainsDNSDumpster(domain)
-				if err != nil {
-					if *verbose {
-						fmt.Printf("Error fetching subdomains from DNSDumpster for %s: %v\n", domain, err)
-					}
-				} else {
-					for _, subdomain := range subdomains {
-						fmt.Println(subdomain)
-					}
-				}
+			// Print summary for sequential execution
+			if *verbose {
+				totalDuration := time.Since(domainStartTime)
+				printSummary(stats, totalDuration, domain)
 			}
 		}
 	}

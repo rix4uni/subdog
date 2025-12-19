@@ -1,15 +1,16 @@
-# subdog
+## subdog
 
 A powerful subdomain enumeration tool that aggregates data from multiple sources to create comprehensive lists of root subdomains.
 
-## ⚠️ Important Note
+## Features
 
-**subdog provides unfiltered data** that may include:
-- Apex domains (e.g., `example.com`)
-- Subdomains from related domains (e.g., `subdomain.example.org`)
-- International variants (e.g., `example.com.tw`)
-
-For targeted results, always use the recommended filtering command shown in the **Recommended Usage** section.
+- **Multiple Data Sources**: Aggregates subdomains from 16+ different sources
+- **Duplicate Removal**: Automatically removes duplicate subdomains across all sources
+- **Output to File**: Save results to a file while still displaying output to terminal
+- **Verbose Mode**: Detailed summary table showing counts, timing, and status for each source
+- **Parallel Processing**: Run multiple sources simultaneously for faster results
+- **Normalization**: Automatically filters out wildcard subdomains and email addresses
+- **Flexible Source Selection**: Choose specific sources or exclude unwanted ones
 
 ## Installation
 ```
@@ -18,16 +19,16 @@ go install github.com/rix4uni/subdog@latest
 
 ## Download prebuilt binaries
 ```
-wget https://github.com/rix4uni/subdog/releases/download/v0.0.4/subdog-linux-amd64-0.0.4.tgz
-tar -xvzf subdog-linux-amd64-0.0.4.tgz
-rm -rf subdog-linux-amd64-0.0.4.tgz
+wget https://github.com/rix4uni/subdog/releases/download/v0.0.5/subdog-linux-amd64-0.0.5.tgz
+tar -xvzf subdog-linux-amd64-0.0.5.tgz
+rm -rf subdog-linux-amd64-0.0.5.tgz
 mv subdog ~/go/bin/subdog
 ```
 Or download [binary release](https://github.com/rix4uni/subdog/releases) for your platform.
 
 ## Compile from source
 ```
-git clone --depth 1 github.com/rix4uni/subdog.git
+git clone --depth 1 https://github.com/rix4uni/subdog.git
 cd subdog; go install
 ```
 
@@ -36,10 +37,11 @@ cd subdog; go install
 Usage of subdog:
   -e, --exclude-source string   Comma-separated list of sources to exclude when using --source all
   -l, --list-sources            List all available sources and exit
+  -o, --output string           Save subdomain results to a file
   -p, --parallel                Run all sources in parallel to speed up scanning
       --silent                  Silent mode.
   -s, --source string           Choose source(s) to use, or 'all' for all sources. Use --list-sources to see available sources (default "all")
-      --verbose                 enable verbose mode
+      --verbose                 Enable verbose mode (shows detailed summary table with counts and timing)
       --version                 Print the version of the tool and exit.
 ```
 
@@ -59,62 +61,46 @@ Usage of subdog:
 - `shodan` - [Shodan API](https://api.shodan.io)
 - `reverseipdomain` - [Reverse IP Domain](https://sub-scan-api.reverseipdomain.com)
 - `dnsdumpster` - [DNS Dumpster](https://dnsdumpster.com)
+- `bugbountydata` - [BugBountyData](https://github.com/rix4uni/BugBountyData)
 
-## 🎯 Recommended Usage
+## Usage Examples
 
-### Filtered Output for Target Domain
+### Basic scan with all sources
 ```yaml
-echo "example.com" | subdog --silent | grep -aE "^(.*\.)?example\.com$" | unew
+echo "example.com" | subdog
 ```
 
-**Why filtering is necessary:**
-Without filtering, you may get results from related domains:
-```yaml
-www.example-services.com    # Related domain
-api.example.com            # Target subdomain
-cdn.us.example.com         # Target subdomain
-example.com.tw            # International variant
+### Specific source only
 ```
-
-The grep filter ensures you only get subdomains directly under your target domain.
-
-## 💡 Examples
-
-### Single Domain Enumeration
-```yaml
-# Basic scan with all sources
-echo "target.com" | subdog
-
-# Specific source only
 echo "target.com" | subdog --source crtsh,certspotter
+```
 
-# Exclude specific sources
+### Exclude specific sources
+```
 echo "target.com" | subdog --exclude-source shodan,virustotal
+```
 
-# Parallel processing for speed
+### Parallel processing for speed
+```
 echo "target.com" | subdog --silent --parallel
+```
 
-# Verbose output for debugging
+### Save results to a file
+```
+echo "target.com" | subdog --output target.com.txt
+```
+
+### Verbose output with summary table
+```
 echo "target.com" | subdog --verbose
 ```
 
-### Multiple Domain Enumeration
-```yaml
-# Scan multiple domains
-cat targets.txt | subdog --silent
-
-# Parallel processing with multiple domains
-cat targets.txt | subdog --silent --parallel
-
-# Specific sources for multiple domains
-cat targets.txt | subdog --source chaos,certspotter
+### Save results and show verbose summary
+```
+echo "target.com" | subdog --verbose --output target.com.txt
 ```
 
-### Advanced Usage
+### Scan multiple domains
 ```yaml
-# Full pipeline with filtering and sorting
-echo "company.com" | subdog --parallel --silent | grep -aE "^(.*\.)?company\.com$" | unew | company_subdomains.txt
-
-# Multiple domains with individual filtering
-cat domains.txt | while read domain;do echo "$domain" | subdog --silent | grep -aE "^(.*\.)?${domain//./\\.}$" | unew | "${domain}_subdomains.txt";done
+cat subs.txt | subdog
 ```

@@ -31,10 +31,22 @@ func FetchSubdomainsShodan(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	// Append the full domain to each subdomain
-	fullSubdomains := make([]string, len(response.Subdomains))
-	for i, sub := range response.Subdomains {
-		fullSubdomains[i] = fmt.Sprintf("%s.%s", sub, domain)
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
+	for _, sub := range response.Subdomains {
+		fullSubdomain := fmt.Sprintf("%s.%s", sub, domain)
+		if isSubdomainOrDomain(fullSubdomain, domain) {
+			normalized := NormalizeSubdomain(fullSubdomain)
+			if normalized != "" {
+				subdomainMap[normalized] = true
+			}
+		}
+	}
+
+	// Convert map to slice
+	fullSubdomains := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		fullSubdomains = append(fullSubdomains, subdomain)
 	}
 
 	return fullSubdomains, nil

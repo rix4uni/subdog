@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type Program struct {
@@ -26,7 +28,11 @@ type ChaosData struct {
 }
 
 // ProcessDomainChaos fetches and processes domain data from chaos
-func ProcessDomainChaos(domain string) {
+// If writer is nil, it writes to os.Stdout
+func ProcessDomainChaos(domain string, writer io.Writer) {
+	if writer == nil {
+		writer = os.Stdout
+	}
 	// Fetch bugbounty list
 	resp, err := http.Get("https://raw.githubusercontent.com/projectdiscovery/public-bugbounty-programs/main/chaos-bugbounty-list.json")
 	if err != nil {
@@ -112,7 +118,17 @@ func ProcessDomainChaos(domain string) {
 						return
 					}
 
-					io.Copy(os.Stdout, rc) // Print to stdout
+					// Read and process lines to filter emails and normalize to lowercase
+					scanner := bufio.NewScanner(rc)
+					for scanner.Scan() {
+						line := strings.TrimSpace(scanner.Text())
+						if line != "" {
+							normalized := NormalizeSubdomain(line)
+							if normalized != "" {
+								fmt.Fprintln(writer, normalized)
+							}
+						}
+					}
 					rc.Close()
 				}
 			}

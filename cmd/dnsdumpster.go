@@ -43,11 +43,24 @@ func FetchSubdomainsDNSDumpster(domain string) ([]string, error) {
 	re := regexp.MustCompile(`<tr><td class="col-md-4">(.*?)<br</td>`)
 	matches := re.FindAllStringSubmatch(string(body), -1)
 
-	var subdomains []string
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
 	for _, match := range matches {
 		if len(match) > 1 {
-			subdomains = append(subdomains, match[1])
+			subdomain := match[1]
+			if isSubdomainOrDomain(subdomain, domain) {
+				normalized := NormalizeSubdomain(subdomain)
+				if normalized != "" {
+					subdomainMap[normalized] = true
+				}
+			}
 		}
+	}
+
+	// Convert map to slice
+	subdomains := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		subdomains = append(subdomains, subdomain)
 	}
 
 	return subdomains, nil

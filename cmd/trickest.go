@@ -54,7 +54,8 @@ func FetchHostnamesTrickest(domain string) ([]string, error) {
 			// Split the response into individual hostnames
 			lines := strings.Split(string(body), "\n")
 			for _, line := range lines {
-				if line = strings.TrimSpace(line); line != "" {
+				line := strings.TrimSpace(line)
+				if line != "" {
 					hostnames = append(hostnames, line)
 				}
 			}
@@ -62,5 +63,22 @@ func FetchHostnamesTrickest(domain string) ([]string, error) {
 		}
 	}
 
-	return hostnames, nil
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
+	for _, hostname := range hostnames {
+		if isSubdomainOrDomain(hostname, domain) {
+			normalized := NormalizeSubdomain(hostname)
+			if normalized != "" {
+				subdomainMap[normalized] = true
+			}
+		}
+	}
+
+	// Convert map to slice
+	filteredHostnames := make([]string, 0, len(subdomainMap))
+	for hostname := range subdomainMap {
+		filteredHostnames = append(filteredHostnames, hostname)
+	}
+
+	return filteredHostnames, nil
 }

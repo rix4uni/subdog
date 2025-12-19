@@ -30,11 +30,24 @@ func FetchSubdomainsHackerTarget(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	var subdomains []string
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
 	for _, record := range records {
 		if len(record) > 0 {
-			subdomains = append(subdomains, record[0]) // First column contains the subdomain
+			subdomain := record[0] // First column contains the subdomain
+			if isSubdomainOrDomain(subdomain, domain) {
+				normalized := NormalizeSubdomain(subdomain)
+				if normalized != "" {
+					subdomainMap[normalized] = true
+				}
+			}
 		}
+	}
+
+	// Convert map to slice
+	subdomains := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		subdomains = append(subdomains, subdomain)
 	}
 
 	return subdomains, nil

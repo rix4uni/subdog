@@ -34,9 +34,21 @@ func FetchSubdomainsAlienVault(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	var subdomains []string
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
 	for _, record := range avResponse.PassiveDNS {
-		subdomains = append(subdomains, record.Hostname)
+		if isSubdomainOrDomain(record.Hostname, domain) {
+			normalized := NormalizeSubdomain(record.Hostname)
+			if normalized != "" {
+				subdomainMap[normalized] = true
+			}
+		}
+	}
+
+	// Convert map to slice
+	subdomains := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		subdomains = append(subdomains, subdomain)
 	}
 
 	return subdomains, nil

@@ -45,9 +45,21 @@ func FetchSubdomainsVirusTotal(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	var subdomains []string
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
 	for _, data := range vtResponse.Data {
-		subdomains = append(subdomains, data.ID)
+		if isSubdomainOrDomain(data.ID, domain) {
+			normalized := NormalizeSubdomain(data.ID)
+			if normalized != "" {
+				subdomainMap[normalized] = true
+			}
+		}
+	}
+
+	// Convert map to slice
+	subdomains := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		subdomains = append(subdomains, subdomain)
 	}
 
 	return subdomains, nil

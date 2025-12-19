@@ -41,12 +41,30 @@ func FetchSubdomainsURLScan(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	var subdomains []string
+	// Use a map to track unique subdomains
+	subdomainMap := make(map[string]bool)
+
 	for _, result := range usResponse.Results {
-		subdomains = append(subdomains, result.Task.Domain)
-		subdomains = append(subdomains, result.Task.ApexDomain)
-		subdomains = append(subdomains, result.Page.Domain)
-		subdomains = append(subdomains, result.Page.ApexDomain)
+		// Check Task.Domain (skip ApexDomain as it often contains unrelated domains)
+		if isSubdomainOrDomain(result.Task.Domain, domain) {
+			normalized := NormalizeSubdomain(result.Task.Domain)
+			if normalized != "" {
+				subdomainMap[normalized] = true
+			}
+		}
+		// Check Page.Domain (skip ApexDomain as it often contains unrelated domains)
+		if isSubdomainOrDomain(result.Page.Domain, domain) {
+			normalized := NormalizeSubdomain(result.Page.Domain)
+			if normalized != "" {
+				subdomainMap[normalized] = true
+			}
+		}
+	}
+
+	// Convert map to slice
+	subdomains := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		subdomains = append(subdomains, subdomain)
 	}
 
 	return subdomains, nil

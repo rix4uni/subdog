@@ -32,9 +32,24 @@ func FetchDNSNamesCertspotter(domain string) ([]string, error) {
 		return nil, err
 	}
 
-	var dnsNames []string
+	// Use a map to track unique filtered subdomains
+	subdomainMap := make(map[string]bool)
+
 	for _, issuance := range csResponse {
-		dnsNames = append(dnsNames, issuance.DNSNames...)
+		for _, dnsName := range issuance.DNSNames {
+			if isSubdomainOrDomain(dnsName, domain) {
+				normalized := NormalizeSubdomain(dnsName)
+				if normalized != "" {
+					subdomainMap[normalized] = true
+				}
+			}
+		}
+	}
+
+	// Convert map to slice
+	dnsNames := make([]string, 0, len(subdomainMap))
+	for subdomain := range subdomainMap {
+		dnsNames = append(dnsNames, subdomain)
 	}
 
 	return dnsNames, nil
