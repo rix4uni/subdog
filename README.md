@@ -71,32 +71,32 @@ echo "example.com" | subdog
 ```
 
 ### Specific source only
-```
+```yaml
 echo "target.com" | subdog --source crtsh,certspotter
 ```
 
 ### Exclude specific sources
-```
+```yaml
 echo "target.com" | subdog --exclude-source shodan,virustotal
 ```
 
 ### Parallel processing for speed
-```
+```yaml
 echo "target.com" | subdog --silent --parallel
 ```
 
 ### Save results to a file
-```
+```yaml
 echo "target.com" | subdog --output target.com.txt
 ```
 
 ### Verbose output with summary table
-```
+```yaml
 echo "target.com" | subdog --verbose
 ```
 
 ### Save results and show verbose summary
-```
+```yaml
 echo "target.com" | subdog --verbose --output target.com.txt
 ```
 
