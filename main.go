@@ -31,6 +31,7 @@ var availableSources = []string{
 	"reverseipdomain",
 	"dnsdumpster",
 	"bugbountydata",
+	"subfinder",
 }
 
 // SourceStat tracks statistics for a single source execution
@@ -208,14 +209,20 @@ func main() {
 	versionFlag := pflag.Bool("version", false, "Print the version of the tool and exit.")
 	verbose := pflag.Bool("verbose", false, "enable verbose mode")
 	outputFile := pflag.StringP("output", "o", "", "Save subdomain results to a file")
+	allExt := pflag.BoolP("all", "a", false, "Run all sources including external tools (subfinder)")
 	pflag.Parse()
 
 	if *listSources {
 		fmt.Println("Available sources:")
 		for _, source := range availableSources {
-			fmt.Printf("  - %s\n", source)
+			if source == "subfinder" {
+				fmt.Printf("  - %s (requires --all flag)\n", source)
+			} else {
+				fmt.Printf("  - %s\n", source)
+			}
 		}
 		fmt.Println("\nUse 'all' to run all sources")
+		fmt.Println("Use --all flag to include external tools (subfinder)")
 		return
 	}
 
@@ -239,6 +246,12 @@ func main() {
 			return !excludedMap[sourceName]
 		}
 		return false
+	}
+
+	// Helper function to check if subfinder should be executed
+	// subfinder only runs when --all flag is explicitly used
+	shouldRunSubfinder := func() bool {
+		return *allExt && !excludedMap["subfinder"]
 	}
 
 	if *versionFlag {
@@ -392,7 +405,26 @@ func main() {
 
 			// Call ProcessDomainChaos WITHOUT holding the mutex
 			// uniqueFileWriter.Write will handle its own mutex locking
-			cmd.ProcessDomainChaos(domain, uniqueWriter)
+			err := cmd.ProcessDomainChaos(domain, uniqueWriter)
+			duration := time.Since(startTime)
+
+			if err != nil {
+				if *verbose {
+					outputMutex.Lock()
+					fmt.Printf("Error fetching subdomains from Chaos for %s: %v\n", domain, err)
+					outputMutex.Unlock()
+				}
+				statsMutex.Lock()
+				stats = append(stats, SourceStat{
+					Name:     "chaos",
+					Count:    0,
+					Duration: duration,
+					Error:    err,
+					ErrorMsg: err.Error(),
+				})
+				statsMutex.Unlock()
+				return
+			}
 
 			// Count new unique subdomains added by chaos (lock, read, unlock)
 			outputMutex.Lock()
@@ -400,7 +432,6 @@ func main() {
 			chaosCount := countAfter - countBefore
 			outputMutex.Unlock()
 
-			duration := time.Since(startTime)
 			statsMutex.Lock()
 			stats = append(stats, SourceStat{
 				Name:     "chaos",
@@ -515,6 +546,15 @@ func main() {
 				processSource("bugbountydata", domain, cmd.FetchSubdomainsBugBountyData)
 			}()
 
+			// Run subfinder after all other sources (only when --all flag is used)
+			if shouldRunSubfinder() {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					processSource("subfinder", domain, cmd.FetchSubdomainsSubfinder)
+				}()
+			}
+
 			wg.Wait()
 
 			// Print summary for parallel execution
@@ -597,21 +637,34 @@ func main() {
 
 				// Call ProcessDomainChaos WITHOUT holding the mutex
 				// uniqueFileWriter.Write will handle its own mutex locking
-				cmd.ProcessDomainChaos(domain, uniqueWriter)
-
-				// Count new unique subdomains added by chaos (lock, read, unlock)
-				outputMutex.Lock()
-				countAfter := len(seenSubdomains)
-				chaosCount := countAfter - countBefore
-				outputMutex.Unlock()
-
+				err := cmd.ProcessDomainChaos(domain, uniqueWriter)
 				duration := time.Since(startTime)
-				stats = append(stats, SourceStat{
-					Name:     "chaos",
-					Count:    chaosCount,
-					Duration: duration,
-					Error:    nil,
-				})
+
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error fetching subdomains from Chaos for %s: %v\n", domain, err)
+					}
+					stats = append(stats, SourceStat{
+						Name:     "chaos",
+						Count:    0,
+						Duration: duration,
+						Error:    err,
+						ErrorMsg: err.Error(),
+					})
+				} else {
+					// Count new unique subdomains added by chaos (lock, read, unlock)
+					outputMutex.Lock()
+					countAfter := len(seenSubdomains)
+					chaosCount := countAfter - countBefore
+					outputMutex.Unlock()
+
+					stats = append(stats, SourceStat{
+						Name:     "chaos",
+						Count:    chaosCount,
+						Duration: duration,
+						Error:    nil,
+					})
+				}
 			}
 
 			processSequentialSource("merklemap", cmd.FetchDomainsMerkleMap)
@@ -619,6 +672,11 @@ func main() {
 			processSequentialSource("reverseipdomain", cmd.FetchSubdomainsReverseIPDomain)
 			processSequentialSource("dnsdumpster", cmd.FetchSubdomainsDNSDumpster)
 			processSequentialSource("bugbountydata", cmd.FetchSubdomainsBugBountyData)
+
+			// Run subfinder after all other sources (only when --all flag is used)
+			if shouldRunSubfinder() {
+				processSequentialSource("subfinder", cmd.FetchSubdomainsSubfinder)
+			}
 
 			// Print summary for sequential execution
 			if *verbose {

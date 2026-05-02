@@ -4,7 +4,8 @@ A powerful subdomain enumeration tool that aggregates data from multiple sources
 
 ## Features
 
-- **Multiple Data Sources**: Aggregates subdomains from 16+ different sources
+- **Multiple Data Sources**: Aggregates subdomains from 17+ different sources
+- **External Tools**: Support for external tools like `subfinder` (with `--all` flag)
 - **Duplicate Removal**: Automatically removes duplicate subdomains across all sources
 - **Output to File**: Save results to a file while still displaying output to terminal
 - **Verbose Mode**: Detailed summary table showing counts, timing, and status for each source
@@ -19,9 +20,9 @@ go install github.com/rix4uni/subdog@latest
 
 ## Download prebuilt binaries
 ```
-wget https://github.com/rix4uni/subdog/releases/download/v0.0.5/subdog-linux-amd64-0.0.5.tgz
-tar -xvzf subdog-linux-amd64-0.0.5.tgz
-rm -rf subdog-linux-amd64-0.0.5.tgz
+wget https://github.com/rix4uni/subdog/releases/download/v0.0.6/subdog-linux-amd64-0.0.6.tgz
+tar -xvzf subdog-linux-amd64-0.0.6.tgz
+rm -rf subdog-linux-amd64-0.0.6.tgz
 mv subdog ~/go/bin/subdog
 ```
 Or download [binary release](https://github.com/rix4uni/subdog/releases) for your platform.
@@ -35,6 +36,7 @@ cd subdog; go install
 ## Usage
 ```yaml
 Usage of subdog:
+  -a, --all                     Run all sources including external tools (subfinder)
   -e, --exclude-source string   Comma-separated list of sources to exclude when using --source all
   -l, --list-sources            List all available sources and exit
   -o, --output string           Save subdomain results to a file
@@ -62,6 +64,7 @@ Usage of subdog:
 - `reverseipdomain` - [Reverse IP Domain](https://sub-scan-api.reverseipdomain.com)
 - `dnsdumpster` - [DNS Dumpster](https://dnsdumpster.com)
 - `bugbountydata` - [BugBountyData](https://github.com/rix4uni/BugBountyData)
+- `subfinder` - [subfinder](https://github.com/projectdiscovery/subfinder) (external tool, requires `--all` flag)
 
 ## Usage Examples
 
@@ -100,7 +103,22 @@ echo "target.com" | subdog --verbose
 echo "target.com" | subdog --verbose --output target.com.txt
 ```
 
+### Include external tools (subfinder)
+```yaml
+echo "target.com" | subdog --all
+```
+
+### Run everything - all sources + external tools + verbose output
+```yaml
+echo "target.com" | subdog --all --verbose
+```
+
 ### Scan multiple domains
 ```yaml
 cat subs.txt | subdog
+```
+
+### Scan with all tools including subfinder in parallel
+```yaml
+cat subs.txt | subdog --all --parallel --verbose
 ```
