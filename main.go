@@ -23,6 +23,8 @@ var availableSources = []string{
 	"certspotter",
 	"hackertarget",
 	"crtsh",
+	"agniops",
+	"crtname",
 	"trickest",
 	"subdomainfinder",
 	"chaos",
@@ -201,7 +203,7 @@ func (w *uniqueFileWriter) Write(p []byte) (n int, err error) {
 }
 
 func main() {
-	sources := pflag.StringP("source", "s", "all", "Choose source(s) to use, or 'all' for all sources. Use --list-sources to see available sources")
+	sources := pflag.StringP("source", "s", "all", "Choose sources to use, or 'all' for all sources.")
 	excludeSources := pflag.StringP("exclude-source", "e", "", "Comma-separated list of sources to exclude when using --source all")
 	listSources := pflag.BoolP("list-sources", "l", false, "List all available sources and exit")
 	parallel := pflag.BoolP("parallel", "p", false, "Run all sources in parallel to speed up scanning")
@@ -495,6 +497,16 @@ func main() {
 				defer wg.Done()
 				processSource("crtsh", domain, cmd.FetchSubdomainsCrtsh)
 			}()
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("agniops", domain, cmd.FetchSubdomainsAgniops)
+			}()
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				processSource("crtname", domain, cmd.FetchSubdomainsCrtName)
+			}()
 
 			wg.Add(1)
 			go func() {
@@ -619,6 +631,8 @@ func main() {
 			})
 			processSequentialSource("hackertarget", cmd.FetchSubdomainsHackerTarget)
 			processSequentialSource("crtsh", cmd.FetchSubdomainsCrtsh)
+			processSequentialSource("agniops", cmd.FetchSubdomainsAgniops)
+			processSequentialSource("crtname", cmd.FetchSubdomainsCrtName)
 			processSequentialSource("trickest", func(d string) ([]string, error) {
 				return cmd.FetchHostnamesTrickest(d)
 			})

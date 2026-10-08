@@ -20,9 +20,9 @@ go install github.com/rix4uni/subdog@latest
 
 ## Download prebuilt binaries
 ```
-wget https://github.com/rix4uni/subdog/releases/download/v0.0.6/subdog-linux-amd64-0.0.6.tgz
-tar -xvzf subdog-linux-amd64-0.0.6.tgz
-rm -rf subdog-linux-amd64-0.0.6.tgz
+wget https://github.com/rix4uni/subdog/releases/download/v0.0.7/subdog-linux-amd64-0.0.7.tgz
+tar -xvzf subdog-linux-amd64-0.0.7.tgz
+rm -rf subdog-linux-amd64-0.0.7.tgz
 mv subdog ~/go/bin/subdog
 ```
 Or download [binary release](https://github.com/rix4uni/subdog/releases) for your platform.
@@ -42,7 +42,7 @@ Usage of subdog:
   -o, --output string           Save subdomain results to a file
   -p, --parallel                Run all sources in parallel to speed up scanning
       --silent                  Silent mode.
-  -s, --source string           Choose source(s) to use, or 'all' for all sources. Use --list-sources to see available sources (default "all")
+  -s, --source string           Choose sources to use, or 'all' for all sources.
       --verbose                 Enable verbose mode (shows detailed summary table with counts and timing)
       --version                 Print the version of the tool and exit.
 ```
@@ -56,6 +56,8 @@ Usage of subdog:
 - `certspotter` - [CertSpotter API](https://api.certspotter.com)
 - `hackertarget` - [HackerTarget API](https://api.hackertarget.com)
 - `crtsh` - [crt.sh Certificate Search](https://crt.sh)
+- `agniops` - [AgniOps](https://app.agniops.in)
+- `crtname` - [crt.name](https://crt.name)
 - `trickest` - [Trickest Inventory](https://github.com/trickest/inventory)
 - `subdomainfinder` - [C99 Subdomain Finder](https://subdomainfinder.c99.nl)
 - `chaos` - [Chaos Project Discovery](https://chaos.projectdiscovery.io)
