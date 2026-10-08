@@ -42,8 +42,8 @@ Usage of subdog:
   -o, --output string           Save subdomain results to a file
   -p, --parallel                Run all sources in parallel to speed up scanning
       --silent                  Silent mode.
-  -s, --source string           Choose sources to use, or 'all' for all sources.
-      --verbose                 Enable verbose mode (shows detailed summary table with counts and timing)
+  -s, --source string           Choose sources to use, or 'all' for all sources. (default "all")
+      --verbose                 enable verbose mode
       --version                 Print the version of the tool and exit.
 ```
 
